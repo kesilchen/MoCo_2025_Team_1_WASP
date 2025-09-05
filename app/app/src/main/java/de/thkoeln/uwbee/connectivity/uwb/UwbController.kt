@@ -17,9 +17,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-class UwbController(ctx: Context) {
+class UwbController(val mac: String, val sessionId: Int, val uwbManager: UwbManager, val sts: ByteArray
+//, ctx: Context
+) {
     var job: Job? = null
-    val uwbManager = UwbManager.createInstance(ctx)
+//    val uwbManager = UwbManager.createInstance(ctx)
     var clientSession by mutableStateOf<UwbControllerSessionScope?>(null)
 
     suspend fun prepare() {
@@ -28,17 +30,21 @@ class UwbController(ctx: Context) {
         Log.d("uwb ranging", localAddr)
     }
 
+    suspend fun addControlee() {
+        clientSession?.addControlee(UwbAddress("02:02"))
+    }
+
     fun startRanging() {
-        val partnerAddress : Pair<UwbAddress, UwbComplexChannel> = Pair(UwbAddress("00:00"),
+        val partnerAddress : Pair<UwbAddress, UwbComplexChannel> = Pair(UwbAddress(mac),
             UwbComplexChannel(9, 9))
 
         val partnerParameters = RangingParameters(
-            uwbConfigType = RangingParameters.CONFIG_MULTICAST_DS_TWR,
-            sessionKeyInfo = byteArrayOf(0x08, 0x07, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06),
+            uwbConfigType = RangingParameters.CONFIG_UNICAST_DS_TWR,
+            sessionKeyInfo = sts,
             complexChannel = partnerAddress.second,
-            peerDevices = listOf(UwbDevice(partnerAddress.first), UwbDevice(UwbAddress("00:01"))),
-            updateRateType = RangingParameters.RANGING_UPDATE_RATE_AUTOMATIC,
-            sessionId = 42,
+            peerDevices = listOf(UwbDevice(partnerAddress.first)),
+            updateRateType = RangingParameters.RANGING_UPDATE_RATE_FREQUENT,
+            sessionId = sessionId,
             subSessionId = 0,
             subSessionKeyInfo = null,
         )
@@ -50,10 +56,10 @@ class UwbController(ctx: Context) {
         val sessionFlow = clientSession?.prepareSession(partnerParameters)
 
         CoroutineScope(Dispatchers.Main.immediate).launch {
-            Log.d("uwb ranging", "STARTING RANGING")
+            Log.d("uwb ranging $mac", "STARTING RANGING")
             sessionFlow?.collect {
                 when(it) {
-                    is RangingResult.RangingResultPosition -> Log.d("uwb ranging", it.position.distance?.value.toString())
+                    is RangingResult.RangingResultPosition -> Log.d("uwb ranging $mac", it.position.distance?.value.toString())
                     is RangingResult.RangingResultPeerDisconnected -> cancelRanging()
                 }
             }
