@@ -42,10 +42,8 @@ fun UwbConnectScreen(
             Text("Prepare Session")
         }
 
-        // Local Address
         Text("Local address: ${ui.localAddress}")
 
-        // Destination Address Eingabe
         OutlinedTextField(
             value = ui.destinationAddress,
             onValueChange = { vm.onDestinationChanged(it) },
@@ -57,7 +55,6 @@ fun UwbConnectScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
-        // Start Button → Navigiert zum Daten-Screen
         Button(
             onClick = {
                 vm.onStart()
@@ -68,7 +65,6 @@ fun UwbConnectScreen(
             Text("Start Ranging")
         }
 
-        // Fehleranzeige (falls vorhanden)
         val err = ui.errorMessage
         if (!err.isNullOrBlank()) {
             Text(err, color = MaterialTheme.colorScheme.error)

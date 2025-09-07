@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-// UI-Snapshot für den Screen
 data class RangingUiState(
     val status: RangingStateDto = RangingStateDto.Idle,
     val localAddress: String = "XX:XX",
@@ -24,7 +23,6 @@ data class RangingUiState(
     val errorMessage: String? = null
 )
 
-// MVVM-ViewModel: bündelt DataSource-Flows & UI-Events
 class RangingViewModel(
     private val dataSource: UwbRangingProvider
 ) : ViewModel() {
@@ -33,13 +31,11 @@ class RangingViewModel(
     private val lastReading = MutableStateFlow<RangingReadingDto?>(null)
 
     init {
-        // Laufende Messwerte beobachten → "aktuelles" Reading merken
         viewModelScope.launch {
             dataSource.readings.collect { lastReading.value = it }
         }
     }
 
-    // Kombiniere Status, LocalAddress, letztes Reading und Zieladresse zu einem UiState
     val uiState: StateFlow<RangingUiState> =
         combine(dataSource.state, dataSource.localAddress, lastReading, destination) { status, local, reading, dest ->
             RangingUiState(
@@ -57,7 +53,6 @@ class RangingViewModel(
             initialValue = RangingUiState()
         )
 
-    // UI → VM Events
     fun onPrepare(controller: Boolean) = viewModelScope.launch {
         dataSource.prepareSession(controller)
     }
@@ -74,7 +69,6 @@ class RangingViewModel(
         destination.value = newValue.uppercase()
     }
 
-    // Helpers
     private fun canStart(status: RangingStateDto, dest: String): Boolean {
         if (status is RangingStateDto.Running || status is RangingStateDto.Preparing) return false
         return dest.matches(Regex("[0-9A-F]{2}:[0-9A-F]{2}"))

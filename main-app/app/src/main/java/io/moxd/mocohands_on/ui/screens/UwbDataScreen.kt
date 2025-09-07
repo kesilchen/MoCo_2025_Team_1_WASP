@@ -41,7 +41,6 @@ fun UwbDataScreen(
                 enabled = ui.isStopEnabled
             ) { Text("Stop & Back") }
 
-            // Optional: nochmal neu vorbereiten ohne zurückzugehen
             if (ui.status !is RangingStateDto.Running) {
                 Button(onClick = { vm.onPrepare(controller = true) }) {
                     Text("Re-Prepare")
