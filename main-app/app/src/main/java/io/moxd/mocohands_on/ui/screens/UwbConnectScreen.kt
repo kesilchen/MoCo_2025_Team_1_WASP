@@ -5,7 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.text.KeyboardOptions // Import KeyboardOptions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import io.moxd.mocohands_on.viewmodel.RangingViewModel
@@ -14,10 +14,11 @@ import io.moxd.mocohands_on.model.data.RangingStateDto
 @Composable
 fun UwbConnectScreen(
     vm: RangingViewModel,
+    useFake: Boolean,
+    onToggleUseFake: (Boolean) -> Unit,
     onNavigateToData: () -> Unit
 ) {
     val ui by vm.uiState.collectAsState()
-
     var isController by remember { mutableStateOf(false) }
 
     Column(
@@ -28,7 +29,12 @@ fun UwbConnectScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
-        // Controller Toggle + Prepare
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Mode: ${if (useFake) "FAKE" else "REAL"}")
+            Spacer(Modifier.width(12.dp))
+            Switch(checked = useFake, onCheckedChange = { onToggleUseFake(it) })
+        }
+
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Controller")
             Spacer(Modifier.width(8.dp))
@@ -48,7 +54,7 @@ fun UwbConnectScreen(
             value = ui.destinationAddress,
             onValueChange = { vm.onDestinationChanged(it) },
             label = { Text("Destination address (e.g. 2B:7F)") },
-            singleLine = true, // Remove KeyboardOptions composable function
+            singleLine = true,
             keyboardOptions = KeyboardOptions(
                 capitalization = KeyboardCapitalization.Characters
             ),

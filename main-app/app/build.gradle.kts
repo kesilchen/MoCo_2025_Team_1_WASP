@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "io.moxd.mocohands_on"
-        minSdk = 24
+        minSdk = 31
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"

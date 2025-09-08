@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "MoCo Hands-On"
+rootProject.name = "UWBee"
 include(":app")
  
