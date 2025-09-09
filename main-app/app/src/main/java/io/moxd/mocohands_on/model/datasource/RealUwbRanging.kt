@@ -48,7 +48,7 @@ class RealUwbRanging(
         }
     }
 
-    override fun startRanging(remoteAdr: String): Boolean {
+    override fun startRanging(remoteAdr: String, sessionId: Int): Boolean {
         if (clientSession == null) return false
 
         val remoteUwbAdr = UwbAddress(remoteAdr)
@@ -58,7 +58,7 @@ class RealUwbRanging(
             complexChannel = UwbComplexChannel(9, 9),
             peerDevices = listOf(UwbDevice(remoteUwbAdr)),
             updateRateType = RangingParameters.RANGING_UPDATE_RATE_FREQUENT,
-            sessionId = 42,
+            sessionId = sessionId,
             subSessionId = 0,
             subSessionKeyInfo = null
         )

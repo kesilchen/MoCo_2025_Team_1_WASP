@@ -67,9 +67,19 @@ class MainActivity : ComponentActivity() {
                     else RealUwbRanging(UwbManager.createInstance(context))
                 }
 
+                val dataSource2: UwbRangingProvider = remember(useFake) {
+                    if (useFake) FakeUwbRanging()
+                    else RealUwbRanging(UwbManager.createInstance(context))
+                }
+
                 val vm: RangingViewModel = viewModel(
                     key = if (useFake) "ranging_vm_fake" else "ranging_vm_real",
                     factory = RangingViewModel.factory(dataSource)
+                )
+
+                val vm2: RangingViewModel = viewModel(
+                    key = if (useFake) "ranging_vm_fake2" else "ranging_vm_real2",
+                    factory = RangingViewModel.factory(dataSource2)
                 )
 
                 OurScaffold(
@@ -82,6 +92,7 @@ class MainActivity : ComponentActivity() {
                         composable<UwbConnectRoute> {
                             UwbConnectScreen(
                                 vm = vm,
+                                vm2 = vm2,
                                 useFake = useFake,
                                 onToggleUseFake = { newValue ->
                                     vm.onStop()
@@ -96,6 +107,7 @@ class MainActivity : ComponentActivity() {
                         composable<UwbDataRoute> {
                             UwbDataScreen(
                                 vm = vm,
+                                vm2 = vm2,
                                 onBack = { navController.popBackStack() }
                             )
                         }

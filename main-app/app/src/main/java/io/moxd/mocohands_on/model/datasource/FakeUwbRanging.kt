@@ -39,7 +39,7 @@ class FakeUwbRanging : UwbRangingProvider {
         _state.value = RangingStateDto.Ready(localAddress = _localAddress.value)
     }
 
-    override fun startRanging(remoteAdr: String): Boolean {
+    override fun startRanging(remoteAdr: String, sessionId: Int): Boolean {
         _state.value = RangingStateDto.Running
         job?.cancel()
         job = scope.launch {

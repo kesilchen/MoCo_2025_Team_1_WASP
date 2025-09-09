@@ -1,6 +1,7 @@
 package io.moxd.mocohands_on.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,10 +17,13 @@ import kotlin.math.abs
 @Composable
 fun UwbDataScreen(
     vm: RangingViewModel,
+    vm2: RangingViewModel,
     onBack: () -> Unit
 ) {
     val ui by vm.uiState.collectAsState()
+    val ui2 by vm2.uiState.collectAsState()
     val currentRangingData = ui.current
+    val currentRangingData2 = ui2.current
 
     Column(
         modifier = Modifier
@@ -28,11 +32,23 @@ fun UwbDataScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        Text("Status: ${ui.status.javaClass.simpleName}")
+        Row {
+            Column {
+                Text("Status: ${ui.status.javaClass.simpleName}")
 
-        Text("Distance: ${currentRangingData?.distanceMeters?.let { "%.2f m".format(it) } ?: "-"}")
-        Text("Azimuth:  ${currentRangingData?.azimuthDeg?.let { "%.1f°".format(it) } ?: "-"}")
-        Text("Elevation:${currentRangingData?.elevationDeg?.let { "%.1f°".format(it) } ?: "-"}")
+                Text("Distance: ${currentRangingData?.distanceMeters?.let { "%.2f m".format(it) } ?: "-"}")
+                Text("Azimuth:  ${currentRangingData?.azimuthDeg?.let { "%.1f°".format(it) } ?: "-"}")
+                Text("Elevation:${currentRangingData?.elevationDeg?.let { "%.1f°".format(it) } ?: "-"}")
+            }
+
+            Column(modifier = Modifier.padding(start = 80.dp)) {
+                Text("Status: ${ui2.status.javaClass.simpleName}")
+
+                Text("Distance: ${currentRangingData2?.distanceMeters?.let { "%.2f m".format(it) } ?: "-"}")
+                Text("Azimuth:  ${currentRangingData2?.azimuthDeg?.let { "%.1f°".format(it) } ?: "-"}")
+                Text("Elevation:${currentRangingData2?.elevationDeg?.let { "%.1f°".format(it) } ?: "-"}")
+            }
+        }
 
         Spacer(Modifier.height(4.dp))
 
@@ -40,13 +56,17 @@ fun UwbDataScreen(
             Button(
                 onClick = {
                     vm.onStop()
+                    vm2.onStop()
                     onBack()
                 },
                 enabled = ui.isStopEnabled
             ) { Text("Stop & Back") }
 
             if (ui.status !is RangingStateDto.Running) {
-                Button(onClick = { vm.onPrepare(controller = true) }) {
+                Button(onClick = {
+                    vm.onPrepare(controller = true)
+                    vm2.onPrepare(controller = true)
+                }) {
                     Text("Re-Prepare")
                 }
             }
@@ -62,8 +82,15 @@ fun UwbDataScreen(
 
         RangeCompass(
             targets = listOf(
-                BoardTarget(angleDegrees = currentRangingData?.azimuthDeg, distanceMeters = currentRangingData?.distanceMeters),
-                BoardTarget(angleDegrees = currentRangingData?.azimuthDeg?.plus(50), distanceMeters = currentRangingData?.distanceMeters?.plus(0.5), color = Color.Green)
+                BoardTarget(
+                    angleDegrees = currentRangingData?.azimuthDeg,
+                    distanceMeters = currentRangingData?.distanceMeters
+                ),
+                BoardTarget(
+                    angleDegrees = currentRangingData2?.azimuthDeg,
+                    distanceMeters = currentRangingData2?.distanceMeters,
+                    color = Color.Green
+                )
             ),
             maxRangeMeters = 3.0,
             activeIndex = 0
@@ -72,7 +99,8 @@ fun UwbDataScreen(
         Spacer(Modifier.height(4.dp))
 
         val aimToleranceDeg = 10.0
-        val isAimingAtBoard = currentRangingData?.azimuthDeg?.let { abs(it) <= aimToleranceDeg } == true
+        val isAimingAtBoard =
+            currentRangingData?.azimuthDeg?.let { abs(it) <= aimToleranceDeg } == true
 
         Button(
             onClick = { /* TODO: trigger interaction */ },

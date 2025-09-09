@@ -11,6 +11,6 @@ interface UwbRangingProvider {
     val localAddress: StateFlow<String>
 
     fun prepareSession(controller: Boolean)
-    fun startRanging(remoteAdr: String): Boolean
+    fun startRanging(remoteAdr: String, sessionId: Int): Boolean
     fun stopRanging()
 }

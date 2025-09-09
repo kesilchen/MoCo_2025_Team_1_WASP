@@ -57,8 +57,8 @@ class RangingViewModel(
         dataSource.prepareSession(controller)
     }
 
-    fun onStart() = viewModelScope.launch {
-        dataSource.startRanging(destination.value)
+    fun onStart(sessionId: Int) = viewModelScope.launch {
+        dataSource.startRanging(destination.value, sessionId)
     }
 
     fun onStop() = viewModelScope.launch {

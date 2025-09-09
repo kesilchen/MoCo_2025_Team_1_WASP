@@ -14,11 +14,13 @@ import io.moxd.mocohands_on.model.data.RangingStateDto
 @Composable
 fun UwbConnectScreen(
     vm: RangingViewModel,
+    vm2: RangingViewModel,
     useFake: Boolean,
     onToggleUseFake: (Boolean) -> Unit,
     onNavigateToData: () -> Unit
 ) {
     val ui by vm.uiState.collectAsState()
+    val ui2 by vm2.uiState.collectAsState()
     var isController by remember { mutableStateOf(false) }
 
     Column(
@@ -42,7 +44,10 @@ fun UwbConnectScreen(
         }
 
         Button(
-            onClick = { vm.onPrepare(controller = isController) },
+            onClick = {
+                vm.onPrepare(controller = isController)
+                vm2.onPrepare(controller = isController)
+            },
             enabled = ui.status !is RangingStateDto.Preparing
         ) {
             Text("Prepare Session")
@@ -61,9 +66,23 @@ fun UwbConnectScreen(
             modifier = Modifier.fillMaxWidth()
         )
 
+        Text("Local address: ${ui2.localAddress}")
+
+        OutlinedTextField(
+            value = ui2.destinationAddress,
+            onValueChange = { vm2.onDestinationChanged(it) },
+            label = { Text("Destination address (e.g. 2B:7F)") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                capitalization = KeyboardCapitalization.Characters
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+
         Button(
             onClick = {
-                vm.onStart()
+                vm.onStart(42)
+                vm2.onStart(43)
                 onNavigateToData()
             },
             enabled = ui.isStartEnabled
