@@ -23,6 +23,7 @@ import androidx.navigation.compose.rememberNavController
 import io.moxd.mocohands_on.model.datasource.FakeUwbRanging
 import io.moxd.mocohands_on.model.datasource.RealUwbRanging
 import io.moxd.mocohands_on.model.datasource.UwbRangingProvider
+import io.moxd.mocohands_on.model.modifier.ExampleRangingModifier
 import io.moxd.mocohands_on.ui.composables.OurScaffold
 import io.moxd.mocohands_on.ui.screens.UwbConnectScreen
 import io.moxd.mocohands_on.ui.screens.UwbDataScreen
@@ -62,6 +63,12 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                //val modifiers = emptyList<RangingModifier>()
+                val modifiers = remember {
+                    listOf(ExampleRangingModifier(factor = 10.0))
+                }
+
+
                 val dataSource: UwbRangingProvider = remember(useFake) {
                     if (useFake) FakeUwbRanging()
                     else RealUwbRanging(UwbManager.createInstance(context))
@@ -69,7 +76,7 @@ class MainActivity : ComponentActivity() {
 
                 val vm: RangingViewModel = viewModel(
                     key = if (useFake) "ranging_vm_fake" else "ranging_vm_real",
-                    factory = RangingViewModel.factory(dataSource)
+                    factory = RangingViewModel.factory(dataSource, modifiers)
                 )
 
                 OurScaffold(

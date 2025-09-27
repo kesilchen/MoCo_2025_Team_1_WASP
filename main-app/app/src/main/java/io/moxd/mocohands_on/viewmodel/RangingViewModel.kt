@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import io.moxd.mocohands_on.model.data.RangingReadingDto
 import io.moxd.mocohands_on.model.data.RangingStateDto
 import io.moxd.mocohands_on.model.datasource.UwbRangingProvider
+import io.moxd.mocohands_on.model.modifier.RangingModifier
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -24,7 +25,8 @@ data class RangingUiState(
 )
 
 class RangingViewModel(
-    private val dataSource: UwbRangingProvider
+    private val dataSource: UwbRangingProvider,
+    private val modifiers: List<RangingModifier>
 ) : ViewModel() {
 
     private val destination = MutableStateFlow("00:00")
@@ -32,7 +34,7 @@ class RangingViewModel(
 
     init {
         viewModelScope.launch {
-            dataSource.readings.collect { lastReading.value = it }
+            dataSource.readings(modifiers).collect { lastReading.value = it }
         }
     }
 
@@ -75,9 +77,13 @@ class RangingViewModel(
     }
 
     companion object {
-        fun factory(ds: UwbRangingProvider) = object : ViewModelProvider.Factory {
+        fun factory(
+            dataSource: UwbRangingProvider,
+            modifiers: List<RangingModifier> = emptyList()
+        ) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T = RangingViewModel(ds) as T
+            override fun <T : ViewModel> create(modelClass: Class<T>): T =
+                RangingViewModel(dataSource, modifiers) as T
+            }
         }
     }
-}

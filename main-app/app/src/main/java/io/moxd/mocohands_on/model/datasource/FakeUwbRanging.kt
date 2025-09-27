@@ -2,12 +2,14 @@ package io.moxd.mocohands_on.model.datasource
 
 import io.moxd.mocohands_on.model.data.RangingReadingDto
 import io.moxd.mocohands_on.model.data.RangingStateDto
+import io.moxd.mocohands_on.model.modifier.RangingModifier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -28,7 +30,10 @@ class FakeUwbRanging : UwbRangingProvider {
     private val _readings = MutableSharedFlow<RangingReadingDto>(
         replay = 0, extraBufferCapacity = 64, onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
-    override val readings: SharedFlow<RangingReadingDto> = _readings
+    override fun readings(modifiers: List<RangingModifier>): Flow<RangingReadingDto> =
+        modifiers.fold(_readings as Flow<RangingReadingDto>) { acc, modifier ->
+            modifier.apply(acc)
+        }
 
     private val _localAddress = MutableStateFlow("FA:KE")
     override val localAddress: StateFlow<String> = _localAddress

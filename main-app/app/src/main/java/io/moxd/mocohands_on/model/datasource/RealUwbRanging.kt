@@ -10,6 +10,7 @@ import androidx.core.uwb.UwbDevice
 import androidx.core.uwb.UwbManager
 import io.moxd.mocohands_on.model.data.RangingReadingDto
 import io.moxd.mocohands_on.model.data.RangingStateDto
+import io.moxd.mocohands_on.model.modifier.RangingModifier
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.*
@@ -29,7 +30,10 @@ class RealUwbRanging(
     private val _readings = MutableSharedFlow<RangingReadingDto>(
         replay = 0, extraBufferCapacity = 64, onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
-    override val readings: SharedFlow<RangingReadingDto> = _readings
+    override fun readings(modifiers: List<RangingModifier>): Flow<RangingReadingDto> =
+        modifiers.fold(_readings as Flow<RangingReadingDto>) { acc, modifier ->
+            modifier.apply(acc)
+        }
 
     private val _localAddress = MutableStateFlow("XX:XX")
     override val localAddress: StateFlow<String> = _localAddress
