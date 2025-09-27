@@ -76,19 +76,16 @@ class RealUwbRanging(
                 when (result) {
                     is RangingResult.RangingResultPosition -> {
                         Log.d("collect", "${result.position.distance?.value} m")
-
-                        val currentDistance = result.position.distance?.value?.toDouble()
-                        if (currentDistance != null) {
-                            val currentAzimuth = result.position.azimuth?.value?.toDouble()
-                            val currentElevation = result.position.elevation?.value?.toDouble()
-                            _readings.emit(
-                                RangingReadingDto(
-                                    distanceMeters = currentDistance,
-                                    azimuthDegrees = currentAzimuth,
-                                    elevationDegrees = currentElevation
-                                )
+                    val currentDistance = result.position.distance?.value?.toDouble()
+                        val currentAzimuth = result.position.azimuth?.value?.toDouble()
+                        val currentElevation = result.position.elevation?.value?.toDouble()
+                        _readings.emit(
+                            RangingReadingDto(
+                                distanceMeters = currentDistance,
+                                azimuthDegrees = currentAzimuth,
+                                elevationDegrees = currentElevation
                             )
-                        }
+                        )
                     }
                     is RangingResult.RangingResultPeerDisconnected -> {
                         Log.d("collect", "Peer disconnected")

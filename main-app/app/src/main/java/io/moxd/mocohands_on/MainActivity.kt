@@ -24,6 +24,7 @@ import io.moxd.mocohands_on.model.datasource.FakeUwbRanging
 import io.moxd.mocohands_on.model.datasource.RealUwbRanging
 import io.moxd.mocohands_on.model.datasource.UwbRangingProvider
 import io.moxd.mocohands_on.model.modifier.ExampleRangingModifier
+import io.moxd.mocohands_on.model.modifier.NoNullsModifier
 import io.moxd.mocohands_on.ui.composables.OurScaffold
 import io.moxd.mocohands_on.ui.screens.UwbConnectScreen
 import io.moxd.mocohands_on.ui.screens.UwbDataScreen
@@ -63,9 +64,13 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                //order matters!
                 //val modifiers = emptyList<RangingModifier>()
                 val modifiers = remember {
-                    listOf(ExampleRangingModifier(factor = 10.0))
+                    listOf(
+                        NoNullsModifier(),
+                        //ExampleRangingModifier(factor = 10.0)
+                    )
                 }
 
 
