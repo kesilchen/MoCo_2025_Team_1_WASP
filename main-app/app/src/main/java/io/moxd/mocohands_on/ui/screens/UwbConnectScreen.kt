@@ -10,16 +10,18 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import io.moxd.mocohands_on.viewmodel.RangingViewModel
 import io.moxd.mocohands_on.model.data.RangingStateDto
+import io.moxd.mocohands_on.viewmodel.NewRangingViewModel
 
 @Composable
 fun UwbConnectScreen(
-    vm: RangingViewModel,
+    vm: NewRangingViewModel,
     useFake: Boolean,
     onToggleUseFake: (Boolean) -> Unit,
     onNavigateToData: () -> Unit
 ) {
-    val ui by vm.uiState.collectAsState()
     var isController by remember { mutableStateOf(false) }
+    val localUwbAddresses by vm.localUwbAddresses.collectAsState()
+    var remoteUwbAddress by vm.remoteAddress
 
     Column(
         modifier = Modifier
@@ -41,39 +43,33 @@ fun UwbConnectScreen(
             Switch(checked = isController, onCheckedChange = { isController = it })
         }
 
-        Button(
-            onClick = { vm.onPrepare(controller = isController) },
-            enabled = ui.status !is RangingStateDto.Preparing
-        ) {
-            Text("Prepare Session")
+        localUwbAddresses.map {
+            Text("Local address: ${it}")
+            OutlinedTextField(
+                value = remoteUwbAddress,
+                onValueChange = { remoteUwbAddress = it },
+                label = { Text("Destination address (e.g. 2B:7F)") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Characters
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
         }
-
-        Text("Local address: ${ui.localAddress}")
-
-        OutlinedTextField(
-            value = ui.destinationAddress,
-            onValueChange = { vm.onDestinationChanged(it) },
-            label = { Text("Destination address (e.g. 2B:7F)") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.Characters
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
 
         Button(
             onClick = {
-                vm.onStart()
+                vm.confirm()
                 onNavigateToData()
             },
-            enabled = ui.isStartEnabled
+//            enabled = ui.isStartEnabled
         ) {
             Text("Start Ranging")
         }
 
-        val err = ui.errorMessage
-        if (!err.isNullOrBlank()) {
-            Text(err, color = MaterialTheme.colorScheme.error)
-        }
+//        val err = ui.errorMessage
+//        if (!err.isNullOrBlank()) {
+//            Text(err, color = MaterialTheme.colorScheme.error)
+//        }
     }
 }

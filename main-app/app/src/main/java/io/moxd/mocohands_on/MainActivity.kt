@@ -29,6 +29,7 @@ import io.moxd.mocohands_on.ui.composables.OurScaffold
 import io.moxd.mocohands_on.ui.screens.UwbConnectScreen
 import io.moxd.mocohands_on.ui.screens.UwbDataScreen
 import io.moxd.mocohands_on.ui.theme.MoCoHandsOnTheme
+import io.moxd.mocohands_on.viewmodel.NewRangingViewModel
 import io.moxd.mocohands_on.viewmodel.RangingViewModel
 import kotlinx.serialization.Serializable
 
@@ -74,14 +75,14 @@ class MainActivity : ComponentActivity() {
                 }
 
 
-                val dataSource: UwbRangingProvider = remember(useFake) {
-                    if (useFake) FakeUwbRanging()
-                    else RealUwbRanging(UwbManager.createInstance(context))
-                }
+//                val dataSource: UwbRangingProvider = remember(useFake) {
+//                    if (useFake) FakeUwbRanging()
+//                    else RealUwbRanging(UwbManager.createInstance(context))
+//                }
 
-                val vm: RangingViewModel = viewModel(
+                val vm: NewRangingViewModel = viewModel(
                     key = if (useFake) "ranging_vm_fake" else "ranging_vm_real",
-                    factory = RangingViewModel.factory(dataSource, modifiers)
+//                    factory = RangingViewModel.factory(dataSource, modifiers)
                 )
 
                 OurScaffold(
@@ -96,7 +97,7 @@ class MainActivity : ComponentActivity() {
                                 vm = vm,
                                 useFake = useFake,
                                 onToggleUseFake = { newValue ->
-                                    vm.onStop()
+//                                    vm.onStop()
                                     if (!newValue && !hasUwbPermission()) {
                                         requestUwbPermission()
                                     }
