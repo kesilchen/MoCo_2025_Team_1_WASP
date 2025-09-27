@@ -3,7 +3,6 @@ package io.moxd.mocohands_on.model.modifier
 import io.moxd.mocohands_on.model.data.RangingReadingDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlin.math.roundToInt
 
 class ExampleRangingModifier(
     private val factor: Double
@@ -17,10 +16,9 @@ class ExampleRangingModifier(
         readings.map { reading ->
             RangingReadingDto(
                 distanceMeters = reading.distanceMeters * factor,
-                azimuthDeg = reading.azimuthDeg?.let { it * factor },
-                elevationDeg = reading.elevationDeg?.let { it * factor },
-                rssi = reading.rssi?.let { (it * factor).roundToInt() },
-                timestampMillis = reading.timestampMillis
+                azimuthDegrees = reading.azimuthDegrees?.let { it * factor },
+                elevationDegrees = reading.elevationDegrees?.let { it * factor },
+                measurementTimeMillis = reading.measurementTimeMillis
             )
         }
 }

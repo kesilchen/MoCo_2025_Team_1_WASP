@@ -48,19 +48,19 @@ class FakeUwbRanging : UwbRangingProvider {
         _state.value = RangingStateDto.Running
         job?.cancel()
         job = scope.launch {
-            var t = 0.0
+            var time = 0.0
             while (isActive) {
-                val distance = 1.5 + 0.5 * sin(t)
-                val azimuth  = 30.0 * sin(t / 2.0)
-                val elev     = 8.0 * sin(t / 3.0)
+                val currentDistance = 1.5 + 0.5 * sin(time)
+                val currentAzimuth  = 30.0 * sin(time / 2.0)
+                val currentElevation     = 8.0 * sin(time / 3.0)
                 _readings.emit(
                     RangingReadingDto(
-                        distanceMeters = distance,
-                        azimuthDeg = azimuth,
-                        elevationDeg = elev
+                        distanceMeters = currentDistance,
+                        azimuthDegrees = currentAzimuth,
+                        elevationDegrees = currentElevation
                     )
                 )
-                t += 2 * PI / 60
+                time += 2 * PI / 60
                 delay(50.milliseconds)
             }
         }

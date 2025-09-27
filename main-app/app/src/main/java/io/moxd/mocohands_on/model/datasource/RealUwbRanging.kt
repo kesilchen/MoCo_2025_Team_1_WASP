@@ -77,16 +77,15 @@ class RealUwbRanging(
                     is RangingResult.RangingResultPosition -> {
                         Log.d("collect", "${result.position.distance?.value} m")
 
-                        val dist = result.position.distance?.value?.toDouble()
-                        if (dist != null) {
-                            val az  = result.position.azimuth?.value?.toDouble()
-                            val el  = result.position.elevation?.value?.toDouble()
+                        val currentDistance = result.position.distance?.value?.toDouble()
+                        if (currentDistance != null) {
+                            val currentAzimuth = result.position.azimuth?.value?.toDouble()
+                            val currentElevation = result.position.elevation?.value?.toDouble()
                             _readings.emit(
                                 RangingReadingDto(
-                                    distanceMeters = dist,
-                                    azimuthDeg = az,
-                                    elevationDeg = el,
-                                    rssi = null
+                                    distanceMeters = currentDistance,
+                                    azimuthDegrees = currentAzimuth,
+                                    elevationDegrees = currentElevation
                                 )
                             )
                         }
