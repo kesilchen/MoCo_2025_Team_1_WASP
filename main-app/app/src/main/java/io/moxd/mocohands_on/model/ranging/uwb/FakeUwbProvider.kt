@@ -1,56 +1,41 @@
 package io.moxd.mocohands_on.model.ranging.uwb
 
 import androidx.core.uwb.UwbAddress
-import io.moxd.mocohands_on.model.data.RangingReadingDto
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.merge
 import kotlin.math.PI
-import kotlin.math.sin
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.random.Random
 
 class FakeUwbProvider : UwbProvider {
-    private val _readings = MutableSharedFlow<RangingReadingDto>(
-        replay = 0, extraBufferCapacity = 64, onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-    override val readings = _readings.asSharedFlow()
+    private val uwbControllers = MutableStateFlow<List<FakeUwbController>>(listOf())
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private var rangingJob: Job? = null
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val readings = uwbControllers.flatMapLatest { controllers ->
+        merge(*controllers.map { it.readings }.toTypedArray())
+    }
 
-    override suspend fun prepareSession(nRemotes: Int): List<UwbAddress> = listOf()
+    override suspend fun prepareSession(nRemotes: Int): List<UwbAddress> {
+        repeat(nRemotes) { index ->
+            val controller = FakeUwbController(index * PI * Random.nextDouble())
+            uwbControllers.value += controller
+        }
+        return listOf()
+    }
 
-    override fun startRanging(uwbDevices: List<UwbDeviceConfiguration>) {
-        rangingJob?.cancel()
-        rangingJob = scope.launch {
-            var time = 0.0
-            while (isActive) {
-                val currentDistance = 1.5 + 0.5 * sin(time)
-                val currentAzimuth = 30.0 * sin(time / 2.0)
-                val currentElevation = 8.0 * sin(time / 3.0)
-                _readings.emit(
-                    RangingReadingDto(
-                        address = UwbAddress("00:00"),
-                        distanceMeters = currentDistance,
-                        azimuthDegrees = currentAzimuth,
-                        elevationDegrees = currentElevation
-                    )
-                )
-                time += 2 * PI / 60
-                delay(50.milliseconds)
-            }
+    override fun startRanging(
+        uwbDevices: List<UwbDeviceConfiguration>,
+    ) {
+        uwbControllers.value.forEachIndexed { i, controller ->
+            controller.startRanging()
         }
     }
 
     override fun stopRanging() {
-        rangingJob?.cancel()
-        rangingJob = null
+        uwbControllers.value.forEach { controller ->
+            controller.stopRanging()
+        }
+        uwbControllers.value = listOf()
     }
 }
