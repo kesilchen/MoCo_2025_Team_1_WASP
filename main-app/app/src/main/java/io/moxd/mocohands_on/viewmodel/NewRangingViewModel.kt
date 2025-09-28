@@ -11,6 +11,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.moxd.mocohands_on.BuildConfig
+import io.moxd.mocohands_on.model.modifier.NoNullsModifier
+import io.moxd.mocohands_on.model.modifier.RangingModifier
 import io.moxd.mocohands_on.model.ranging.RealRangingProvider
 import io.moxd.mocohands_on.model.ranging.oob.FakeOutOfBandProvider
 import io.moxd.mocohands_on.model.ranging.oob.ManualOutOfBandProvider
@@ -47,11 +49,15 @@ class NewRangingViewModel(app: Application, useFakeData: Boolean, showDebugScree
 
     fun setNumberOfDevices(n: Int) {
         manualOutOfBandProvider.setNumberOfDevices(n)
-        _remoteAddresses = SnapshotStateList(n) {"00:00"}
+        _remoteAddresses = SnapshotStateList(n) { "00:00" }
         restart()
     }
 
-    val readings = rangingProvider.readings.shareIn(
+    val modifiers = listOf<RangingModifier>(NoNullsModifier())
+
+    val readings = modifiers.fold(rangingProvider.readings) { acc, modifier ->
+        modifier.apply(acc)
+    }.shareIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
         replay = 1
