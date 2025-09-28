@@ -1,5 +1,6 @@
 package io.moxd.mocohands_on.model.ranging.uwb.provider
 
+import android.content.Context
 import androidx.core.uwb.UwbAddress
 import io.moxd.mocohands_on.model.ranging.uwb.UwbDeviceConfiguration
 import io.moxd.mocohands_on.model.ranging.uwb.controller.FakeUwbController
@@ -10,7 +11,7 @@ import kotlinx.coroutines.flow.merge
 import kotlin.math.PI
 import kotlin.random.Random
 
-class FakeUwbProvider : UwbProvider {
+class FakeUwbProvider(val context: Context) : UwbProvider {
     private val uwbControllers = MutableStateFlow<List<FakeUwbController>>(listOf())
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -20,7 +21,7 @@ class FakeUwbProvider : UwbProvider {
 
     override suspend fun prepareSession(nRemotes: Int): List<UwbAddress> {
         repeat(nRemotes) { index ->
-            val controller = FakeUwbController(index * PI * Random.nextDouble())
+            val controller = FakeUwbController(context, index * PI * Random.nextDouble())
             uwbControllers.value += controller
         }
         return listOf()

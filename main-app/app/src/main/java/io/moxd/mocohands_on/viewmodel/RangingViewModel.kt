@@ -9,15 +9,15 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import io.moxd.mocohands_on.BuildConfig
 import io.moxd.mocohands_on.model.modifier.NoNullsModifier
+import io.moxd.mocohands_on.BuildConfig
 import io.moxd.mocohands_on.model.modifier.RangingModifier
 import io.moxd.mocohands_on.model.ranging.DefaultRangingProvider
 import io.moxd.mocohands_on.model.ranging.oob.FakeOutOfBandProvider
 import io.moxd.mocohands_on.model.ranging.oob.ManualOutOfBandProvider
+import io.moxd.mocohands_on.model.ranging.uwb.UwbDeviceConfiguration
 import io.moxd.mocohands_on.model.ranging.uwb.provider.FakeUwbProvider
 import io.moxd.mocohands_on.model.ranging.uwb.provider.UnicastUwbProvider
-import io.moxd.mocohands_on.model.ranging.uwb.UwbDeviceConfiguration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.shareIn
@@ -30,7 +30,7 @@ class RangingViewModel(app: Application, useFakeData: Boolean, showDebugScreen: 
         if (showDebugScreen) manualOutOfBandProvider else FakeOutOfBandProvider()
 
     private val uwbProvider =
-        if (useFakeData) FakeUwbProvider() else UnicastUwbProvider(app.applicationContext)
+        if (useFakeData) FakeUwbProvider(app.applicationContext) else UnicastUwbProvider(app.applicationContext)
 
     private val rangingProvider = DefaultRangingProvider(outOfBandProvider, uwbProvider)
 

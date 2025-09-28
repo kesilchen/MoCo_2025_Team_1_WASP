@@ -1,7 +1,9 @@
 package io.moxd.mocohands_on.model.ranging.uwb.controller
 
+import android.content.Context
 import androidx.core.uwb.UwbAddress
 import io.moxd.mocohands_on.model.data.RangingReadingDto
+import io.moxd.mocohands_on.model.ranging.uwb.logparser.UwbLogParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -13,11 +15,14 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlin.math.PI
-import kotlin.math.sin
+import kotlin.math.roundToInt
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 
-class FakeUwbController(val offset: Double) {
+class FakeUwbController(
+    private val context: Context,
+    val offset: Double
+) {
     private var rangingJob: Job? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
@@ -28,23 +33,40 @@ class FakeUwbController(val offset: Double) {
     )
     val readings = _readings.asSharedFlow()
 
+    private val assetFileName: String = "logs.txt"
+
     fun startRanging() {
         rangingJob?.cancel()
         rangingJob = scope.launch {
-            var time = 0.0 + offset
+            val input = context.assets.open(assetFileName)
+            val triples = UwbLogParser.parseTriplesFromLog(input, board = "01:01")
+            input.close()
+
+            if (triples.isEmpty()) return@launch
+
+            val startIndex = run {
+                val offsetFraction = (offset / (2 * PI)) % 1.0
+                val rawIndex = (offsetFraction * triples.size).roundToInt()
+                val numberOfDataPoints = triples.size
+                ((rawIndex % numberOfDataPoints) + numberOfDataPoints) % numberOfDataPoints
+            }
+
+            var index = startIndex
             while (isActive) {
-                val currentDistance = 1.5 + 0.5 * sin(time)
-                val currentAzimuth = 30.0 * sin(time / 2.0)
-                val currentElevation = 8.0 * sin(time / 3.0)
+                val (currentDistance, currentAzimuth, currentElevation) = triples[index]
+
                 _readings.emit(
                     RangingReadingDto(
                         address = address,
-                        distanceMeters = currentDistance,
-                        azimuthDegrees = currentAzimuth,
-                        elevationDegrees = currentElevation
+                        distanceMeters = currentDistance.takeUnless { it.isNaN() },
+                        azimuthDegrees = currentAzimuth.takeUnless { it.isNaN() },
+                        elevationDegrees = currentElevation.takeUnless { it.isNaN() }
                     )
                 )
-                time += 2 * PI / 60
+
+                index++
+                if (index >= triples.size) index = 0
+
                 delay(50.milliseconds)
             }
         }
