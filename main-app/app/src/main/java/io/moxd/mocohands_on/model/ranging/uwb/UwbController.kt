@@ -81,6 +81,7 @@ class UwbController(
                         )
                         _readings.emit(
                             RangingReadingDto(
+                                address = result.device.address,
                                 distanceMeters = currentDistance,
                                 azimuthDegrees = currentAzimuth,
                                 elevationDegrees = currentElevation,

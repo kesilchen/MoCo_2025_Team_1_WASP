@@ -81,6 +81,7 @@ class RealUwbRanging(
                         val currentElevation = result.position.elevation?.value?.toDouble()
                         _readings.emit(
                             RangingReadingDto(
+                                address = result.device.address,
                                 distanceMeters = currentDistance,
                                 azimuthDegrees = currentAzimuth,
                                 elevationDegrees = currentElevation

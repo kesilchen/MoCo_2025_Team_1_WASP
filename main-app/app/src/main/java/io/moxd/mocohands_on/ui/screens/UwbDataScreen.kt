@@ -7,11 +7,22 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.core.uwb.UwbAddress
+import io.moxd.mocohands_on.model.data.RangingReadingDto
 import io.moxd.mocohands_on.model.data.RangingStateDto
 import io.moxd.mocohands_on.ui.composables.BoardTarget
 import io.moxd.mocohands_on.ui.composables.RangeCompass
 import io.moxd.mocohands_on.viewmodel.NewRangingViewModel
+import java.security.MessageDigest
 import kotlin.math.abs
+
+@OptIn(ExperimentalStdlibApi::class)
+fun getColorFromAddress(address: UwbAddress): Color {
+    val md = MessageDigest.getInstance("SHA-256")
+    val digest = md.digest(address.address)
+    val hex = digest.slice(0..5).toByteArray().toHexString()
+    return Color("FF$hex".toLong(16))
+}
 
 @Composable
 fun UwbDataScreen(
@@ -19,7 +30,17 @@ fun UwbDataScreen(
     onBack: () -> Unit
 ) {
     val readings by vm.readings.collectAsState(null)
+    var readingsByDevice by remember { mutableStateOf(emptyMap<String, RangingReadingDto>()) }
+    val devices by vm.devices.collectAsState()
     val state by vm.state.collectAsState()
+
+    LaunchedEffect(vm.readings) {
+        vm.readings.collect {reading ->
+            readingsByDevice = readingsByDevice.toMutableMap().apply {
+                this[reading.address.toString()] = reading
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -30,9 +51,9 @@ fun UwbDataScreen(
     ) {
         Text("Status: ${state.javaClass.simpleName}")
 
-        Text("Distance: ${readings?.distanceMeters?.let { "%.2f m".format(it) } ?: "-"}")
-        Text("Azimuth:  ${readings?.azimuthDegrees?.let { "%.1f°".format(it) } ?: "-"}")
-        Text("Elevation:${readings?.elevationDegrees?.let { "%.1f°".format(it) } ?: "-"}")
+//        Text("Distance: ${readings?.distanceMeters?.let { "%.2f m".format(it) } ?: "-"}")
+//        Text("Azimuth:  ${readings?.azimuthDegrees?.let { "%.1f°".format(it) } ?: "-"}")
+//        Text("Elevation:${readings?.elevationDegrees?.let { "%.1f°".format(it) } ?: "-"}")
 
         Spacer(Modifier.height(4.dp))
 
@@ -45,13 +66,13 @@ fun UwbDataScreen(
                 enabled = state is RangingStateDto.Running
             ) { Text("Stop & Back") }
 
-            if (state !is RangingStateDto.Running) {
-                Button(onClick = {
+//            if (state !is RangingStateDto.Running) {
+//                Button(onClick = {
 //                    vm.onPrepare(controller = true)
-                }) {
-                    Text("Re-Prepare")
-                }
-            }
+//                }) {
+//                    Text("Re-Prepare")
+//                }
+//            }
         }
 
 //        val err = ui.errorMessage
@@ -63,17 +84,13 @@ fun UwbDataScreen(
         Spacer(Modifier.height(4.dp))
 
         RangeCompass(
-            targets = listOf(
+            targets = readingsByDevice.map {
                 BoardTarget(
-                    angleDegrees = readings?.azimuthDegrees,
-                    distanceMeters = readings?.distanceMeters
-                ),
-                BoardTarget(
-                    angleDegrees = readings?.azimuthDegrees?.plus(50),
-                    distanceMeters = readings?.distanceMeters?.plus(0.5),
-                    color = Color.Green
+                    angleDegrees = it.value.azimuthDegrees,
+                    distanceMeters = it.value.distanceMeters,
+                    color = getColorFromAddress(it.value.address)
                 )
-            ),
+            },
             maxRangeMeters = 3.0,
             activeIndex = 0
         )

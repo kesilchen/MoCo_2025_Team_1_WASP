@@ -37,6 +37,7 @@ class FakeUwbProvider : UwbProvider {
                 val currentElevation = 8.0 * sin(time / 3.0)
                 _readings.emit(
                     RangingReadingDto(
+                        address = UwbAddress("00:00"),
                         distanceMeters = currentDistance,
                         azimuthDegrees = currentAzimuth,
                         elevationDegrees = currentElevation

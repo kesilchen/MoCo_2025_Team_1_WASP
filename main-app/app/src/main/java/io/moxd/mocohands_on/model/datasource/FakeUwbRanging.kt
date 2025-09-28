@@ -1,5 +1,6 @@
 package io.moxd.mocohands_on.model.datasource
 
+import androidx.core.uwb.UwbAddress
 import io.moxd.mocohands_on.model.data.RangingReadingDto
 import io.moxd.mocohands_on.model.data.RangingStateDto
 import io.moxd.mocohands_on.model.modifier.RangingModifier
@@ -30,6 +31,7 @@ class FakeUwbRanging : UwbRangingProvider {
     private val _readings = MutableSharedFlow<RangingReadingDto>(
         replay = 0, extraBufferCapacity = 64, onBufferOverflow = BufferOverflow.DROP_OLDEST
     )
+
     override fun readings(modifiers: List<RangingModifier>): Flow<RangingReadingDto> =
         modifiers.fold(_readings as Flow<RangingReadingDto>) { acc, modifier ->
             modifier.apply(acc)
@@ -51,10 +53,11 @@ class FakeUwbRanging : UwbRangingProvider {
             var time = 0.0
             while (isActive) {
                 val currentDistance = 1.5 + 0.5 * sin(time)
-                val currentAzimuth  = 30.0 * sin(time / 2.0)
-                val currentElevation     = 8.0 * sin(time / 3.0)
+                val currentAzimuth = 30.0 * sin(time / 2.0)
+                val currentElevation = 8.0 * sin(time / 3.0)
                 _readings.emit(
                     RangingReadingDto(
+                        address = UwbAddress("00:00"),
                         distanceMeters = currentDistance,
                         azimuthDegrees = currentAzimuth,
                         elevationDegrees = currentElevation
