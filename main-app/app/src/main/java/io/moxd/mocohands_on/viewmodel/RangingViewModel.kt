@@ -1,89 +1,105 @@
 package io.moxd.mocohands_on.viewmodel
 
+import android.app.Application
+import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.core.uwb.UwbAddress
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import io.moxd.mocohands_on.model.data.RangingReadingDto
-import io.moxd.mocohands_on.model.data.RangingStateDto
-import io.moxd.mocohands_on.model.datasource.UwbRangingProvider
+import io.moxd.mocohands_on.BuildConfig
+import io.moxd.mocohands_on.model.modifier.NoNullsModifier
 import io.moxd.mocohands_on.model.modifier.RangingModifier
-import kotlinx.coroutines.flow.MutableStateFlow
+import io.moxd.mocohands_on.model.ranging.DefaultRangingProvider
+import io.moxd.mocohands_on.model.ranging.oob.FakeOutOfBandProvider
+import io.moxd.mocohands_on.model.ranging.oob.ManualOutOfBandProvider
+import io.moxd.mocohands_on.model.ranging.uwb.provider.FakeUwbProvider
+import io.moxd.mocohands_on.model.ranging.uwb.provider.UnicastUwbProvider
+import io.moxd.mocohands_on.model.ranging.uwb.UwbDeviceConfiguration
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 
-data class RangingUiState(
-    val status: RangingStateDto = RangingStateDto.Idle,
-    val localAddress: String = "XX:XX",
-    val current: RangingReadingDto? = null,
-    val destinationAddress: String = "00:00",
-    val isStartEnabled: Boolean = false,
-    val isStopEnabled: Boolean = false,
-    val errorMessage: String? = null
-)
+class RangingViewModel(app: Application, useFakeData: Boolean, showDebugScreen: Boolean) :
+    AndroidViewModel(app) {
+    private val manualOutOfBandProvider = ManualOutOfBandProvider()
+    private val outOfBandProvider =
+        if (showDebugScreen) manualOutOfBandProvider else FakeOutOfBandProvider()
 
-class RangingViewModel(
-    private val dataSource: UwbRangingProvider,
-    private val modifiers: List<RangingModifier>
-) : ViewModel() {
+    private val uwbProvider =
+        if (useFakeData) FakeUwbProvider() else UnicastUwbProvider(app.applicationContext)
 
-    private val destination = MutableStateFlow("00:00")
-    private val lastReading = MutableStateFlow<RangingReadingDto?>(null)
+    private val rangingProvider = DefaultRangingProvider(outOfBandProvider, uwbProvider)
 
     init {
-        viewModelScope.launch {
-            dataSource.readings(modifiers).collect { lastReading.value = it }
+        Log.d("RangingViewModel", "init")
+        start()
+    }
+
+    private var _remoteAddresses = mutableStateListOf("00:00", "00:00")
+    val remoteAddresses: List<String> get() = _remoteAddresses
+
+    fun updateRemoteAddress(index: Int, address: String) {
+        _remoteAddresses[index] = address
+    }
+
+    fun setNumberOfDevices(n: Int) {
+        manualOutOfBandProvider.setNumberOfDevices(n)
+        _remoteAddresses = SnapshotStateList(n) { "00:00" }
+        restart()
+    }
+
+    val modifiers = listOf<RangingModifier>(NoNullsModifier())
+
+    val readings = modifiers.fold(rangingProvider.readings) { acc, modifier ->
+        modifier.apply(acc)
+    }.shareIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        replay = 1
+    )
+    val devices = rangingProvider.devices
+    val state = rangingProvider.state
+
+    val localUwbAddresses = manualOutOfBandProvider.localUwbAddresses
+
+    fun confirm() {
+        manualOutOfBandProvider.userInputCallback?.callback(
+            remoteAddresses.mapIndexed { index, remoteAddress ->
+                UwbDeviceConfiguration(
+                    UwbAddress(remoteAddress),
+                    sessionId = 42 + index,
+                    sessionKey = byteArrayOf(0x08, 0x07, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06)
+                )
+            }
+        )
+    }
+
+    fun start() {
+        viewModelScope.launch(Dispatchers.IO) {
+            rangingProvider.start()
         }
     }
 
-    val uiState: StateFlow<RangingUiState> =
-        combine(dataSource.state, dataSource.localAddress, lastReading, destination) { status, local, reading, dest ->
-            RangingUiState(
-                status = status,
-                localAddress = local,
-                current = reading,
-                destinationAddress = dest,
-                isStartEnabled = canStart(status, dest),
-                isStopEnabled = status is RangingStateDto.Running,
-                errorMessage = (status as? RangingStateDto.Error)?.message
-            )
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = RangingUiState()
-        )
-
-    fun onPrepare(controller: Boolean) = viewModelScope.launch {
-        dataSource.prepareSession(controller)
-    }
-
-    fun onStart() = viewModelScope.launch {
-        dataSource.startRanging(destination.value)
-    }
-
-    fun onStop() = viewModelScope.launch {
-        dataSource.stopRanging()
-    }
-
-    fun onDestinationChanged(newValue: String) {
-        destination.value = newValue.uppercase()
-    }
-
-    private fun canStart(status: RangingStateDto, dest: String): Boolean {
-        if (status is RangingStateDto.Running || status is RangingStateDto.Preparing) return false
-        return dest.matches(Regex("[0-9A-F]{2}:[0-9A-F]{2}"))
+    fun restart() {
+        viewModelScope.launch(Dispatchers.IO) {
+            rangingProvider.stop()
+            rangingProvider.start()
+        }
     }
 
     companion object {
-        fun factory(
-            dataSource: UwbRangingProvider,
-            modifiers: List<RangingModifier> = emptyList()
-        ) = object : ViewModelProvider.Factory {
+        fun factory(application: Application) = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T =
-                RangingViewModel(dataSource, modifiers) as T
-            }
+                RangingViewModel(
+                    application,
+                    useFakeData = BuildConfig.USE_FAKE_DATA,
+                    showDebugScreen = BuildConfig.SHOW_DEBUG_SCREEN
+                ) as T
         }
     }
+}

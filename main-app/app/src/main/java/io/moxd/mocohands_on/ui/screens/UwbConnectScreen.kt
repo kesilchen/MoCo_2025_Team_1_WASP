@@ -6,20 +6,24 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import io.moxd.mocohands_on.viewmodel.RangingViewModel
 import io.moxd.mocohands_on.model.data.RangingStateDto
+import io.moxd.mocohands_on.viewmodel.RangingViewModel
 
 @Composable
 fun UwbConnectScreen(
     vm: RangingViewModel,
-    useFake: Boolean,
-    onToggleUseFake: (Boolean) -> Unit,
     onNavigateToData: () -> Unit
 ) {
-    val ui by vm.uiState.collectAsState()
-    var isController by remember { mutableStateOf(false) }
+    val localUwbAddresses by vm.localUwbAddresses.collectAsState()
+    val remoteUwbAddresses = vm.remoteAddresses
+    val state by vm.state.collectAsState()
+
+    var numberOfDevices by rememberSaveable { mutableStateOf("2") }
 
     Column(
         modifier = Modifier
@@ -28,52 +32,57 @@ fun UwbConnectScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Mode: ${if (useFake) "FAKE" else "REAL"}")
-            Spacer(Modifier.width(12.dp))
-            Switch(checked = useFake, onCheckedChange = { onToggleUseFake(it) })
+        Row {
+            OutlinedTextField(
+                value = numberOfDevices,
+                onValueChange = {
+                    numberOfDevices = it
+                    if (it.toIntOrNull() != null) {
+                        vm.setNumberOfDevices(it.toInt())
+                    }
+                },
+                label = { Text("Number of remotes") },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Controller")
-            Spacer(Modifier.width(8.dp))
-            Switch(checked = isController, onCheckedChange = { isController = it })
+        val parsedNumberOfDevices = numberOfDevices.toIntOrNull()
+        parsedNumberOfDevices?.let {
+            repeat(it) { index ->
+                Column {
+                    Text("Local address: ${if (localUwbAddresses.size > index) localUwbAddresses[index] else "xx:xx"}")
+                    Text("Session ID: ${42 + index}")
+                    OutlinedTextField(
+                        value = remoteUwbAddresses[index],
+                        onValueChange = { vm.updateRemoteAddress(index, it) },
+                        label = { Text("Destination address (e.g. 2B:7F)") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Characters
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
         }
-
-        Button(
-            onClick = { vm.onPrepare(controller = isController) },
-            enabled = ui.status !is RangingStateDto.Preparing
-        ) {
-            Text("Prepare Session")
-        }
-
-        Text("Local address: ${ui.localAddress}")
-
-        OutlinedTextField(
-            value = ui.destinationAddress,
-            onValueChange = { vm.onDestinationChanged(it) },
-            label = { Text("Destination address (e.g. 2B:7F)") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                capitalization = KeyboardCapitalization.Characters
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
 
         Button(
             onClick = {
-                vm.onStart()
+                vm.confirm()
                 onNavigateToData()
             },
-            enabled = ui.isStartEnabled
+            enabled = remoteUwbAddresses.all { remoteAddress -> remoteAddress.matches(Regex("[0-9A-F]{2}:[0-9A-F]{2}")) } && state is RangingStateDto.Preparing
         ) {
             Text("Start Ranging")
         }
 
-        val err = ui.errorMessage
-        if (!err.isNullOrBlank()) {
-            Text(err, color = MaterialTheme.colorScheme.error)
-        }
+//        val err = ui.errorMessage
+//        if (!err.isNullOrBlank()) {
+//            Text(err, color = MaterialTheme.colorScheme.error)
+//        }
     }
 }

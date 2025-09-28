@@ -15,6 +15,7 @@ class ExampleRangingModifier(
     override fun apply(readings: Flow<RangingReadingDto>): Flow<RangingReadingDto> =
         readings.map { reading ->
             RangingReadingDto(
+                address = reading.address,
                 distanceMeters = reading.distanceMeters?.let { it * factor },
                 azimuthDegrees = reading.azimuthDegrees?.let { it * factor },
                 elevationDegrees = reading.elevationDegrees?.let { it * factor },

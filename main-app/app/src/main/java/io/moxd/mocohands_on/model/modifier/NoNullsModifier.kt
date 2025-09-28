@@ -23,6 +23,7 @@ class NoNullsModifier(
 
             emit(
                 RangingReadingDto(
+                    address = r.address,
                     distanceMeters = lastDistance,
                     azimuthDegrees = lastAzimuth,
                     elevationDegrees = lastElevation,
