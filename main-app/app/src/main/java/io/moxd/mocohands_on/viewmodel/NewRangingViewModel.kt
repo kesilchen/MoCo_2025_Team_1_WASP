@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.moxd.mocohands_on.BuildConfig
+import io.moxd.mocohands_on.model.data.RangingStateDto
 import io.moxd.mocohands_on.model.ranging.RealRangingProvider
 import io.moxd.mocohands_on.model.ranging.oob.FakeOutOfBandProvider
 import io.moxd.mocohands_on.model.ranging.oob.ManualOutOfBandProvider
@@ -38,14 +39,17 @@ class NewRangingViewModel(app: Application, useFakeData: Boolean, showDebugScree
         }
     }
 
+    val remoteAddress = mutableStateOf("00:00")
+
     val readings = rangingProvider.readings.shareIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
         replay = 1
     )
+    val state = rangingProvider.state
+
     val localUwbAddresses = manualOutOfBandProvider.localUwbAddresses
 
-    val remoteAddress = mutableStateOf("00:00")
     fun confirm() {
         manualOutOfBandProvider.userInputCallback?.callback(
             listOf(

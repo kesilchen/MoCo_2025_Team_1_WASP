@@ -1,16 +1,14 @@
 package io.moxd.mocohands_on.ui.screens
 
-import android.app.Application
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import io.moxd.mocohands_on.model.data.RangingStateDto
 import io.moxd.mocohands_on.viewmodel.NewRangingViewModel
 
 @Composable
@@ -20,6 +18,7 @@ fun UwbConnectScreen(
 ) {
     val localUwbAddresses by vm.localUwbAddresses.collectAsState()
     var remoteUwbAddress by vm.remoteAddress
+    val state by vm.state.collectAsState()
 
     Column(
         modifier = Modifier
@@ -47,7 +46,7 @@ fun UwbConnectScreen(
                 vm.confirm()
                 onNavigateToData()
             },
-//            enabled = ui.isStartEnabled
+            enabled = remoteUwbAddress.matches(Regex("[0-9A-F]{2}:[0-9A-F]{2}")) && state is RangingStateDto.Ready
         ) {
             Text("Start Ranging")
         }

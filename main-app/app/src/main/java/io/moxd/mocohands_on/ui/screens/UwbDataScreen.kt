@@ -11,7 +11,6 @@ import io.moxd.mocohands_on.model.data.RangingStateDto
 import io.moxd.mocohands_on.ui.composables.BoardTarget
 import io.moxd.mocohands_on.ui.composables.RangeCompass
 import io.moxd.mocohands_on.viewmodel.NewRangingViewModel
-import io.moxd.mocohands_on.viewmodel.RangingViewModel
 import kotlin.math.abs
 
 @Composable
@@ -20,6 +19,7 @@ fun UwbDataScreen(
     onBack: () -> Unit
 ) {
     val readings by vm.readings.collectAsState(null)
+    val state by vm.state.collectAsState()
 
     Column(
         modifier = Modifier
@@ -28,7 +28,7 @@ fun UwbDataScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         horizontalAlignment = Alignment.Start
     ) {
-//        Text("Status: ${ui.status.javaClass.simpleName}")
+        Text("Status: ${state.javaClass.simpleName}")
 
         Text("Distance: ${readings?.distanceMeters?.let { "%.2f m".format(it) } ?: "-"}")
         Text("Azimuth:  ${readings?.azimuthDegrees?.let { "%.1f°".format(it) } ?: "-"}")
@@ -42,14 +42,16 @@ fun UwbDataScreen(
 //                    vm.onStop()
                     onBack()
                 },
-//                enabled = ui.isStopEnabled
+                enabled = state is RangingStateDto.Running
             ) { Text("Stop & Back") }
 
-//            if (ui.status !is RangingStateDto.Running) {
-//                Button(onClick = { vm.onPrepare(controller = true) }) {
-//                    Text("Re-Prepare")
-//                }
-//            }
+            if (state !is RangingStateDto.Running) {
+                Button(onClick = {
+//                    vm.onPrepare(controller = true)
+                }) {
+                    Text("Re-Prepare")
+                }
+            }
         }
 
 //        val err = ui.errorMessage
@@ -62,8 +64,15 @@ fun UwbDataScreen(
 
         RangeCompass(
             targets = listOf(
-                BoardTarget(angleDegrees = readings?.azimuthDegrees, distanceMeters = readings?.distanceMeters),
-                BoardTarget(angleDegrees = readings?.azimuthDegrees?.plus(50), distanceMeters = readings?.distanceMeters?.plus(0.5), color = Color.Green)
+                BoardTarget(
+                    angleDegrees = readings?.azimuthDegrees,
+                    distanceMeters = readings?.distanceMeters
+                ),
+                BoardTarget(
+                    angleDegrees = readings?.azimuthDegrees?.plus(50),
+                    distanceMeters = readings?.distanceMeters?.plus(0.5),
+                    color = Color.Green
+                )
             ),
             maxRangeMeters = 3.0,
             activeIndex = 0
