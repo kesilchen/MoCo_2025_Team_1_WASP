@@ -52,10 +52,11 @@ class EmaSmoothingModifier(
 
             emit(
                 RangingReadingDto(
+                    address = reading.address,
                     distanceMeters = emaDistance,
                     azimuthDegrees = averageAzimuthDegrees,
                     elevationDegrees = averageElevationDegrees,
-                    measurementTimeMillis = reading.measurementTimeMillis
+                    measurementTimeMillis = reading.measurementTimeMillis,
                 )
             )
         }
