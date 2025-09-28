@@ -58,9 +58,9 @@ class FakeUwbController(
                 _readings.emit(
                     RangingReadingDto(
                         address = address,
-                        distanceMeters = currentDistance,
-                        azimuthDegrees = currentAzimuth,
-                        elevationDegrees = currentElevation
+                        distanceMeters = currentDistance.takeUnless { it.isNaN() },
+                        azimuthDegrees = currentAzimuth.takeUnless { it.isNaN() },
+                        elevationDegrees = currentElevation.takeUnless { it.isNaN() }
                     )
                 )
 
