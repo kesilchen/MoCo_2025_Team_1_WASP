@@ -18,6 +18,7 @@ import androidx.navigation.compose.rememberNavController
 import io.moxd.mocohands_on.ui.composables.OurScaffold
 import io.moxd.mocohands_on.ui.screens.UwbConnectScreen
 import io.moxd.mocohands_on.ui.screens.UwbDataScreen
+import io.moxd.mocohands_on.ui.screens.UwbPovScreen
 import io.moxd.mocohands_on.ui.theme.MoCoHandsOnTheme
 import io.moxd.mocohands_on.viewmodel.RangingViewModel
 import kotlinx.serialization.Serializable
@@ -74,10 +75,15 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable<UwbDataRoute> {
-                            UwbDataScreen(
-                                vm = rangingViewModel,
-                                onBack = { navController.popBackStack() }
-                            )
+                            when (BuildConfig.VISUALIZATION_TYPE) {
+                                "COMPASS" -> UwbDataScreen(
+                                    vm = rangingViewModel,
+                                    onBack = { navController.popBackStack() }
+                                )
+
+                                "POV" ->
+                                    UwbPovScreen(vm = rangingViewModel)
+                            }
                         }
                     }
                 }

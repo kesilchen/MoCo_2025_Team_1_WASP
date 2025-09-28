@@ -31,7 +31,7 @@ android {
             )
         }
     }
-    flavorDimensions += listOf("version", "data")
+    flavorDimensions += listOf("version", "data", "visualization")
     productFlavors {
         create("demo") {
             dimension = "version"
@@ -52,6 +52,16 @@ android {
             dimension = "data"
             versionNameSuffix = "-real"
             buildConfigField("Boolean", "USE_FAKE_DATA", "false")
+        }
+        create("compass") {
+            dimension = "visualization"
+            versionNameSuffix = "-compass"
+            buildConfigField("String", "VISUALIZATION_TYPE", "\"COMPASS\"")
+        }
+        create("pov") {
+            dimension = "visualization"
+            versionNameSuffix = "-pov"
+            buildConfigField("String", "VISUALIZATION_TYPE", "\"POV\"")
         }
     }
 
@@ -80,6 +90,10 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.runtime.livedata)
     implementation(libs.androidx.uwb)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.kotlinx.coroutines.guava)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

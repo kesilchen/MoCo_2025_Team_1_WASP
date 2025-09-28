@@ -85,7 +85,9 @@ fun UwbDataScreen(
         RangeCompass(
             targets = readingsByDevice.map {
                 BoardTarget(
+                    address = it.value.address,
                     angleDegrees = it.value.azimuthDegrees,
+                    elevationDegrees = it.value.elevationDegrees,
                     distanceMeters = it.value.distanceMeters,
                     color = getColorFromAddress(it.value.address)
                 )

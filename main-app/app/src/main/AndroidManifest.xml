@@ -3,7 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.UWB_RANGING"/>
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.uwb" android:required="false"/>
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
 
     <application
         android:allowBackup="true"

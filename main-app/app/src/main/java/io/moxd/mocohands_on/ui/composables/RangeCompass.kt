@@ -14,13 +14,16 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.uwb.UwbAddress
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 
 @Immutable
 data class BoardTarget(
+    val address: UwbAddress,
     val angleDegrees: Double?,
+    val elevationDegrees: Double?,
     val distanceMeters: Double?,
     val color: Color? = null
 )
