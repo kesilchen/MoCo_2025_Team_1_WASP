@@ -2,7 +2,9 @@ package io.moxd.mocohands_on.viewmodel
 
 import android.app.Application
 import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.core.uwb.UwbAddress
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
@@ -33,32 +35,48 @@ class NewRangingViewModel(app: Application, useFakeData: Boolean, showDebugScree
 
     init {
         Log.d("RangingViewModel", "init")
-        viewModelScope.launch(Dispatchers.IO) {
-            rangingProvider.start()
-        }
+        start()
     }
 
-    val remoteAddress = mutableStateOf("00:00")
+    private var _remoteAddresses = mutableStateListOf("00:00", "00:00")
+    val remoteAddresses: List<String> get() = _remoteAddresses
+
+    fun updateRemoteAddress(index: Int, address: String) {
+        _remoteAddresses[index] = address
+    }
+
+    fun setNumberOfDevices(n: Int) {
+        manualOutOfBandProvider.setNumberOfDevices(n)
+        _remoteAddresses = SnapshotStateList(n) {"00:00"}
+        restart()
+    }
 
     val readings = rangingProvider.readings.shareIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
         replay = 1
     )
+    val devices = rangingProvider.devices
     val state = rangingProvider.state
 
     val localUwbAddresses = manualOutOfBandProvider.localUwbAddresses
 
     fun confirm() {
         manualOutOfBandProvider.userInputCallback?.callback(
-            listOf(
+            remoteAddresses.mapIndexed { index, remoteAddress ->
                 UwbDeviceConfiguration(
-                    UwbAddress(remoteAddress.value),
-                    sessionId = 42,
+                    UwbAddress(remoteAddress),
+                    sessionId = 42 + index,
                     sessionKey = byteArrayOf(0x08, 0x07, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06)
                 )
-            )
+            }
         )
+    }
+
+    fun start() {
+        viewModelScope.launch(Dispatchers.IO) {
+            rangingProvider.start()
+        }
     }
 
     fun restart() {

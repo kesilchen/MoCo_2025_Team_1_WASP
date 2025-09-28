@@ -6,7 +6,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.moxd.mocohands_on.model.data.RangingStateDto
 import io.moxd.mocohands_on.viewmodel.NewRangingViewModel
@@ -17,8 +20,11 @@ fun UwbConnectScreen(
     onNavigateToData: () -> Unit
 ) {
     val localUwbAddresses by vm.localUwbAddresses.collectAsState()
-    var remoteUwbAddress by vm.remoteAddress
+    val remoteUwbAddresses = vm.remoteAddresses
+    val devices by vm.devices.collectAsState()
     val state by vm.state.collectAsState()
+
+    var numberOfDevices by rememberSaveable { mutableStateOf("2") }
 
     Column(
         modifier = Modifier
@@ -27,18 +33,42 @@ fun UwbConnectScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        localUwbAddresses.map { address ->
-            Text("Local address: $address")
+        Row {
             OutlinedTextField(
-                value = remoteUwbAddress,
-                onValueChange = { remoteUwbAddress = it },
-                label = { Text("Destination address (e.g. 2B:7F)") },
-                singleLine = true,
+                value = numberOfDevices,
+                onValueChange = {
+                    numberOfDevices = it
+                    if (it.toIntOrNull() != null) {
+                        vm.setNumberOfDevices(it.toInt())
+                    }
+                },
+                label = { Text("Number of remotes") },
                 keyboardOptions = KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Characters
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Done
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
+        }
+
+        val parsedNumberOfDevices = numberOfDevices.toIntOrNull()
+        parsedNumberOfDevices?.let {
+            repeat(it) { index ->
+                Column {
+                    Text("Local address: ${if (localUwbAddresses.size > index) localUwbAddresses[index] else "xx:xx"}")
+                    Text("Session ID: ${42 + index}")
+                    OutlinedTextField(
+                        value = remoteUwbAddresses[index],
+                        onValueChange = { vm.updateRemoteAddress(index, it) },
+                        label = { Text("Destination address (e.g. 2B:7F)") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(
+                            capitalization = KeyboardCapitalization.Characters
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
         }
 
         Button(
@@ -46,7 +76,7 @@ fun UwbConnectScreen(
                 vm.confirm()
                 onNavigateToData()
             },
-            enabled = remoteUwbAddress.matches(Regex("[0-9A-F]{2}:[0-9A-F]{2}")) && state is RangingStateDto.Preparing
+            enabled = remoteUwbAddresses.all { remoteAddress -> remoteAddress.matches(Regex("[0-9A-F]{2}:[0-9A-F]{2}")) } && state is RangingStateDto.Preparing
         ) {
             Text("Start Ranging")
         }

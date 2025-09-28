@@ -14,7 +14,9 @@ class ManualOutOfBandProvider: OutOfBandProvider {
 
     var userInputCallback: ManualOobCallback? = null
 
-    override suspend fun discoverDevices() = 1
+    private var numberOfDevices = 2
+
+    override suspend fun discoverDevices() = List(numberOfDevices) {}
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun exchangeParameters(localUwbAddresses: List<UwbAddress>) =
@@ -27,4 +29,8 @@ class ManualOutOfBandProvider: OutOfBandProvider {
                 }
             }
         }
+
+    fun setNumberOfDevices(n: Int) {
+        numberOfDevices = n
+    }
 }
