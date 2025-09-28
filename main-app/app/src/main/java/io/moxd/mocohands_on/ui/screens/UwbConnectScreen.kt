@@ -12,16 +12,15 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.moxd.mocohands_on.model.data.RangingStateDto
-import io.moxd.mocohands_on.viewmodel.NewRangingViewModel
+import io.moxd.mocohands_on.viewmodel.RangingViewModel
 
 @Composable
 fun UwbConnectScreen(
-    vm: NewRangingViewModel,
+    vm: RangingViewModel,
     onNavigateToData: () -> Unit
 ) {
     val localUwbAddresses by vm.localUwbAddresses.collectAsState()
     val remoteUwbAddresses = vm.remoteAddresses
-    val devices by vm.devices.collectAsState()
     val state by vm.state.collectAsState()
 
     var numberOfDevices by rememberSaveable { mutableStateOf("2") }

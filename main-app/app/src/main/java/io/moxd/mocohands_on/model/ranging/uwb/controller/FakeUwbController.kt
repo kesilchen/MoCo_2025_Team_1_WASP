@@ -1,4 +1,4 @@
-package io.moxd.mocohands_on.model.ranging.uwb
+package io.moxd.mocohands_on.model.ranging.uwb.controller
 
 import androidx.core.uwb.UwbAddress
 import io.moxd.mocohands_on.model.data.RangingReadingDto

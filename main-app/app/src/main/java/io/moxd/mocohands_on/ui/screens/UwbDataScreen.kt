@@ -12,7 +12,7 @@ import io.moxd.mocohands_on.model.data.RangingReadingDto
 import io.moxd.mocohands_on.model.data.RangingStateDto
 import io.moxd.mocohands_on.ui.composables.BoardTarget
 import io.moxd.mocohands_on.ui.composables.RangeCompass
-import io.moxd.mocohands_on.viewmodel.NewRangingViewModel
+import io.moxd.mocohands_on.viewmodel.RangingViewModel
 import java.security.MessageDigest
 import kotlin.math.abs
 
@@ -26,12 +26,11 @@ fun getColorFromAddress(address: UwbAddress): Color {
 
 @Composable
 fun UwbDataScreen(
-    vm: NewRangingViewModel,
+    vm: RangingViewModel,
     onBack: () -> Unit
 ) {
     val readings by vm.readings.collectAsState(null)
     var readingsByDevice by remember { mutableStateOf(emptyMap<String, RangingReadingDto>()) }
-    val devices by vm.devices.collectAsState()
     val state by vm.state.collectAsState()
 
     LaunchedEffect(vm.readings) {

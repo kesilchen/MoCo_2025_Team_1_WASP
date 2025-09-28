@@ -2,11 +2,11 @@ package io.moxd.mocohands_on.model.ranging
 
 import io.moxd.mocohands_on.model.data.RangingStateDto
 import io.moxd.mocohands_on.model.ranging.oob.OutOfBandProvider
-import io.moxd.mocohands_on.model.ranging.uwb.UwbProvider
+import io.moxd.mocohands_on.model.ranging.uwb.provider.UwbProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class RealRangingProvider(
+class DefaultRangingProvider(
     private val oobProvider: OutOfBandProvider,
     private val uwbProvider: UwbProvider
 ) : RangingProvider {
