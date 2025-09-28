@@ -46,7 +46,7 @@ fun UwbConnectScreen(
                 vm.confirm()
                 onNavigateToData()
             },
-            enabled = remoteUwbAddress.matches(Regex("[0-9A-F]{2}:[0-9A-F]{2}")) && state is RangingStateDto.Ready
+            enabled = remoteUwbAddress.matches(Regex("[0-9A-F]{2}:[0-9A-F]{2}")) && state is RangingStateDto.Preparing
         ) {
             Text("Start Ranging")
         }

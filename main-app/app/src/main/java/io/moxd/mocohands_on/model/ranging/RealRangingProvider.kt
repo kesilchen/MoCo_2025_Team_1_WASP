@@ -23,4 +23,9 @@ class RealRangingProvider(
         uwbProvider.startRanging(remoteUwbDevices)
         state.value = RangingStateDto.Running
     }
+
+    override suspend fun stop() {
+        uwbProvider.stopRanging()
+        state.value = RangingStateDto.Stopped
+    }
 }

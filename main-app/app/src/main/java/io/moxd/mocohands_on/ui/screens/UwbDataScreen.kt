@@ -39,7 +39,7 @@ fun UwbDataScreen(
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Button(
                 onClick = {
-//                    vm.onStop()
+                    vm.restart()
                     onBack()
                 },
                 enabled = state is RangingStateDto.Running

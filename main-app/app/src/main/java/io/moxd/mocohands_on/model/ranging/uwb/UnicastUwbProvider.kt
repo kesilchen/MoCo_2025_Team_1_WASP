@@ -13,7 +13,9 @@ class UnicastUwbProvider(ctx: Context) : UwbProvider {
     private val uwbControllers = MutableStateFlow<List<UwbController>>(listOf())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override val readings = uwbControllers.flatMapLatest { controllers -> merge(*controllers.map { it.readings }.toTypedArray()) }
+    override val readings = uwbControllers.flatMapLatest { controllers ->
+        merge(*controllers.map { it.readings }.toTypedArray())
+    }
 
     override suspend fun prepareSession(nRemotes: Int): List<UwbAddress> {
         val addresses = mutableListOf<UwbAddress>()
@@ -39,5 +41,12 @@ class UnicastUwbProvider(ctx: Context) : UwbProvider {
                 uwbDevices[i].sessionKey
             )
         }
+    }
+
+    override fun stopRanging() {
+        uwbControllers.value.forEach { controller ->
+            controller.stopRanging()
+        }
+        uwbControllers.value = listOf()
     }
 }

@@ -47,4 +47,9 @@ class FakeUwbProvider : UwbProvider {
             }
         }
     }
+
+    override fun stopRanging() {
+        rangingJob?.cancel()
+        rangingJob = null
+    }
 }

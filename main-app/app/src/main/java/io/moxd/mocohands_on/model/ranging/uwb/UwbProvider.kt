@@ -8,4 +8,5 @@ interface UwbProvider {
     val readings: Flow<RangingReadingDto>
     suspend fun prepareSession(nRemotes: Int): List<UwbAddress>
     fun startRanging(uwbDevices: List<UwbDeviceConfiguration>)
+    fun stopRanging()
 }

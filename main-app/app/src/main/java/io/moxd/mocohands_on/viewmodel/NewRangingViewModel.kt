@@ -9,7 +9,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.moxd.mocohands_on.BuildConfig
-import io.moxd.mocohands_on.model.data.RangingStateDto
 import io.moxd.mocohands_on.model.ranging.RealRangingProvider
 import io.moxd.mocohands_on.model.ranging.oob.FakeOutOfBandProvider
 import io.moxd.mocohands_on.model.ranging.oob.ManualOutOfBandProvider
@@ -60,6 +59,19 @@ class NewRangingViewModel(app: Application, useFakeData: Boolean, showDebugScree
                 )
             )
         )
+    }
+
+    fun restart() {
+        viewModelScope.launch(Dispatchers.IO) {
+            rangingProvider.stop()
+            rangingProvider.start()
+        }
+    }
+
+    fun stop() {
+        viewModelScope.launch(Dispatchers.IO) {
+            rangingProvider.stop()
+        }
     }
 
     companion object {

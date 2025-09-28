@@ -9,4 +9,5 @@ interface RangingProvider {
     val readings: Flow<RangingReadingDto>
     val state: StateFlow<RangingStateDto>
     suspend fun start()
+    suspend fun stop()
 }
