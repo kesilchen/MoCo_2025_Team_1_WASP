@@ -19,6 +19,9 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -28,6 +31,30 @@ android {
             )
         }
     }
+    flavorDimensions += listOf("version", "data")
+    productFlavors {
+        create("demo") {
+            dimension = "version"
+            versionNameSuffix = "-demo"
+            buildConfigField("Boolean", "SHOW_DEBUG_SCREEN", "true")
+        }
+        create("full") {
+            dimension = "version"
+            versionNameSuffix = "-full"
+            buildConfigField("Boolean", "SHOW_DEBUG_SCREEN", "false")
+        }
+        create("fake") {
+            dimension = "data"
+            versionNameSuffix = "-fake"
+            buildConfigField("Boolean", "USE_FAKE_DATA", "true")
+        }
+        create("real") {
+            dimension = "data"
+            versionNameSuffix = "-real"
+            buildConfigField("Boolean", "USE_FAKE_DATA", "false")
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

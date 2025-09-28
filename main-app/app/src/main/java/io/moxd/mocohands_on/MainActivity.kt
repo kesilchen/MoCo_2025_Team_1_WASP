@@ -1,6 +1,7 @@
 package io.moxd.mocohands_on
 
 import android.Manifest
+import android.app.Application
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -57,7 +58,8 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val context = LocalContext.current
 
-                var useFake by rememberSaveable { mutableStateOf(false) }
+                val useFake = BuildConfig.USE_FAKE_DATA
+                val showDebugScreen = BuildConfig.SHOW_DEBUG_SCREEN
 
                 LaunchedEffect(useFake) {
                     if (!useFake && !hasUwbPermission()) {
@@ -80,9 +82,15 @@ class MainActivity : ComponentActivity() {
 //                    else RealUwbRanging(UwbManager.createInstance(context))
 //                }
 
-                val vm: NewRangingViewModel = viewModel(
-                    key = if (useFake) "ranging_vm_fake" else "ranging_vm_real",
-//                    factory = RangingViewModel.factory(dataSource, modifiers)
+//                val vm: NewRangingViewModel = viewModel(
+//                    key = if (useFake) "ranging_vm_fake" else "ranging_vm_real",
+////                    factory = RangingViewModel.factory(dataSource, modifiers)
+//                )
+
+                val rangingViewModel = viewModel<NewRangingViewModel>(
+                    factory = NewRangingViewModel.factory(
+                        LocalContext.current.applicationContext as Application
+                    )
                 )
 
                 OurScaffold(
@@ -90,25 +98,17 @@ class MainActivity : ComponentActivity() {
                 ) {
                     NavHost(
                         navController = navController,
-                        startDestination = UwbConnectRoute
+                        startDestination = if (showDebugScreen) UwbConnectRoute else UwbDataRoute
                     ) {
                         composable<UwbConnectRoute> {
                             UwbConnectScreen(
-                                vm = vm,
-                                useFake = useFake,
-                                onToggleUseFake = { newValue ->
-//                                    vm.onStop()
-                                    if (!newValue && !hasUwbPermission()) {
-                                        requestUwbPermission()
-                                    }
-                                    useFake = newValue
-                                },
+                                vm = rangingViewModel,
                                 onNavigateToData = { navController.navigate(UwbDataRoute) }
                             )
                         }
                         composable<UwbDataRoute> {
                             UwbDataScreen(
-                                vm = vm,
+                                vm = rangingViewModel,
                                 onBack = { navController.popBackStack() }
                             )
                         }
@@ -126,7 +126,9 @@ data object HomeRoute : Route()
 
 @Serializable
 data object RangingRoute : Route()
+
 @Serializable
 data object UwbConnectRoute : Route()
+
 @Serializable
 data object UwbDataRoute : Route()
