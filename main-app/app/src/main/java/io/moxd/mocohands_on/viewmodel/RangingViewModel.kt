@@ -22,6 +22,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
+import java.util.Date
+import java.util.Locale
 
 class RangingViewModel(app: Application, useFakeData: Boolean, showDebugScreen: Boolean) :
     AndroidViewModel(app) {
@@ -34,9 +36,38 @@ class RangingViewModel(app: Application, useFakeData: Boolean, showDebugScreen: 
 
     private val rangingProvider = DefaultRangingProvider(outOfBandProvider, uwbProvider)
 
+    private val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
+
+    val modifiers = listOf<RangingModifier>(
+        NoNullsModifier(),
+    )
+
+    val readings = modifiers.fold(rangingProvider.readings) { acc, modifier ->
+        modifier.apply(acc)
+    }.shareIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        replay = 1
+    )
+
+    val devices = rangingProvider.devices
+    val state = rangingProvider.state
+    val localUwbAddresses = manualOutOfBandProvider.localUwbAddresses
+
     init {
         Log.d("RangingViewModel", "init")
         start()
+
+        viewModelScope.launch(Dispatchers.IO) {
+            readings.collect { r ->
+                Log.d(
+                    "collect",
+                    "${dateFormat.format(Date(r.measurementTimeMillis))} " +
+                            "${r.address}: ${r.distanceMeters ?: "null"} " +
+                            "${r.azimuthDegrees ?: "null"} ${r.elevationDegrees ?: "null"}"
+                )
+            }
+        }
     }
 
     private var _remoteAddresses = mutableStateListOf("00:00", "00:00")
@@ -51,20 +82,6 @@ class RangingViewModel(app: Application, useFakeData: Boolean, showDebugScreen: 
         _remoteAddresses = SnapshotStateList(n) { "00:00" }
         restart()
     }
-
-    val modifiers = listOf<RangingModifier>(NoNullsModifier())
-
-    val readings = modifiers.fold(rangingProvider.readings) { acc, modifier ->
-        modifier.apply(acc)
-    }.shareIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        replay = 1
-    )
-    val devices = rangingProvider.devices
-    val state = rangingProvider.state
-
-    val localUwbAddresses = manualOutOfBandProvider.localUwbAddresses
 
     fun confirm() {
         manualOutOfBandProvider.userInputCallback?.callback(
