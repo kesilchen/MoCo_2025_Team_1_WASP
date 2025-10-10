@@ -49,7 +49,7 @@ fun ESP32DeviceSetup(
     var testResult by remember { mutableStateOf<TestResult?>(null) }
 
     val isValidIp = isValidIpv4(ipAddress)
-    val isContinueEnabled = testResult == TestResult.Success
+    val isContinueEnabled = testResult is TestResult.Success
 
     val scope = rememberCoroutineScope()
 
@@ -129,6 +129,8 @@ fun ESP32DeviceSetup(
                     Spacer(Modifier.width(8.dp))
                     Text("Connection successful!", color = MaterialTheme.colorScheme.primary)
                 }
+                Spacer(Modifier.height(16.dp))
+                Text("Device ID: ${result.deviceInfo.deviceId}", color = MaterialTheme.colorScheme.primary)
             }
 
             is TestResult.Error -> {
