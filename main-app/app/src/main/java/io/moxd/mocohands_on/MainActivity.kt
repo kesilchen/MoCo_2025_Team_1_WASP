@@ -16,9 +16,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import io.moxd.mocohands_on.ui.composables.OurScaffold
+import io.moxd.mocohands_on.ui.screens.SetupDevicesScreen
 import io.moxd.mocohands_on.ui.screens.UwbConnectScreen
 import io.moxd.mocohands_on.ui.screens.UwbDataScreen
 import io.moxd.mocohands_on.ui.screens.UwbPovScreen
+import io.moxd.mocohands_on.ui.screens.WelcomeScreen
 import io.moxd.mocohands_on.ui.theme.MoCoHandsOnTheme
 import io.moxd.mocohands_on.viewmodel.RangingViewModel
 import kotlinx.serialization.Serializable
@@ -66,8 +68,18 @@ class MainActivity : ComponentActivity() {
                 ) {
                     NavHost(
                         navController = navController,
-                        startDestination = if (showDebugScreen) UwbConnectRoute else UwbDataRoute
+                        startDestination =
+//                            if (showDebugScreen) UwbConnectRoute else UwbDataRoute
+                            WelcomeRoute
                     ) {
+                        composable<WelcomeRoute> {
+                            WelcomeScreen {
+                                navController.navigate(SetupDevicesRoute)
+                            }
+                        }
+                        composable<SetupDevicesRoute> {
+                            SetupDevicesScreen()
+                        }
                         composable<UwbConnectRoute> {
                             UwbConnectScreen(
                                 vm = rangingViewModel,
@@ -93,6 +105,12 @@ class MainActivity : ComponentActivity() {
 }
 
 sealed class Route
+
+@Serializable
+data object WelcomeRoute : Route()
+
+@Serializable
+data object SetupDevicesRoute : Route()
 
 @Serializable
 data object HomeRoute : Route()

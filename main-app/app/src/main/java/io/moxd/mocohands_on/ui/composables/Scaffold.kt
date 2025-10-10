@@ -30,13 +30,16 @@ fun OurScaffold(
     fapClick: () -> Unit = {},
     content: @Composable () -> Unit = {},
 ) {
-    Scaffold(topBar = {
-        TopAppBar(
-            title = { Text(text = stringResource(id = R.string.app_name)) },
-        )
-    }, bottomBar = {
-        OurNavigationBar(onNavigate)
-    }) { innerPadding ->
+    Scaffold(
+//        topBar = {
+//            TopAppBar(
+//                title = { Text(text = stringResource(id = R.string.app_name)) },
+//            )
+//        }, bottomBar = {
+//            OurNavigationBar(onNavigate)
+//        }
+    )
+    { innerPadding ->
         Box(Modifier.padding(innerPadding)) {
             content()
         }
