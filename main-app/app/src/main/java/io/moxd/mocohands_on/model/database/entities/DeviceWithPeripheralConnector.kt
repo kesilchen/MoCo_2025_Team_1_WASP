@@ -7,8 +7,8 @@ data class DeviceWithPeripheralConnector(
     @Embedded
     val device: Device,
     @Relation(
-        parentColumn = "id",
-        entityColumn = "peripheralId"
+        parentColumn = "peripheralConnectorId",
+        entityColumn = "id"
     )
     val peripheralConnector: PeripheralConnector
 )

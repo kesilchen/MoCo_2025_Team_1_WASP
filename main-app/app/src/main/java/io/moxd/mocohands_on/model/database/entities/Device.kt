@@ -2,6 +2,7 @@ package io.moxd.mocohands_on.model.database.entities
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(
@@ -9,10 +10,11 @@ import androidx.room.PrimaryKey
     foreignKeys = [
         ForeignKey(
             entity = PeripheralConnector::class,
-            parentColumns = ["peripheralId"],
-            childColumns = ["id"]
+            parentColumns = ["id"],
+            childColumns = ["peripheralConnectorId"]
         )
-    ]
+    ],
+    indices = [Index("peripheralConnectorId")]
 )
 class Device(
     @PrimaryKey(autoGenerate = true)
