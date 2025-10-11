@@ -110,7 +110,9 @@ class MainActivity : ComponentActivity() {
                             when (BuildConfig.VISUALIZATION_TYPE) {
                                 "COMPASS" -> UwbDataScreen(
                                     vm = rangingViewModel,
-                                    onBack = { navController.popBackStack() }
+                                    onSettingsClick = {
+                                        navController.navigate(SetupDevicesRoute)
+                                    }
                                 )
 
                                 "POV" ->
