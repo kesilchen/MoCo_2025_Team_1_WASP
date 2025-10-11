@@ -31,11 +31,13 @@ import io.moxd.mocohands_on.util.isValidSessionId
 @Composable
 fun UwbParametersStep(
     onClose: () -> Unit,
-    onContinue: (uwbAddress: String, sessionId: Int) -> Unit
+    onContinue: (name: String, uwbAddress: String, sessionId: Int) -> Unit
 ) {
+    var name by remember { mutableStateOf("") }
     var macAddress by remember { mutableStateOf("") }
     var sessionId by remember { mutableStateOf("") }
 
+    val isNameValid = name.isNotEmpty()
     val isMacValid = isValidMac(macAddress)
     val isSessionValid = isValidSessionId(sessionId)
 
@@ -48,6 +50,17 @@ fun UwbParametersStep(
         Text("Manual Device Setup", style = MaterialTheme.typography.titleLarge)
 
         Spacer(Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Device Name") },
+            placeholder = { Text("My awesome device") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Spacer(Modifier.height(8.dp))
 
         OutlinedTextField(
             value = macAddress,
@@ -75,9 +88,9 @@ fun UwbParametersStep(
         Spacer(Modifier.height(24.dp))
 
         Button(
-            onClick = { onContinue(macAddress, sessionId.toInt()) },
+            onClick = { onContinue(name, macAddress, sessionId.toInt()) },
             modifier = Modifier.fillMaxWidth(),
-            enabled = isMacValid && isSessionValid,
+            enabled = isNameValid && isMacValid && isSessionValid,
             shape = RoundedCornerShape(CornerRadius)
         ) {
             Text("Next")
@@ -94,5 +107,5 @@ fun UwbParametersStep(
 @Preview(showBackground = true)
 @Composable
 fun UwbParametersStepPreview() {
-    UwbParametersStep(onClose = {}, onContinue = { macAddress, sessionId -> })
+    UwbParametersStep(onClose = {}, onContinue = { name, macAddress, sessionId -> })
 }

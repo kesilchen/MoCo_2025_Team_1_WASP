@@ -34,18 +34,21 @@ fun ManualDeviceSetupBottomSheet(
     val scope = rememberCoroutineScope()
     val navController = rememberNavController()
 
+    var name by remember { mutableStateOf<String?>(null) }
     var uwbAddress by remember { mutableStateOf<String?>(null) }
     var uwbSessionId by remember { mutableStateOf<Int?>(null) }
     var peripheralConnectorType by remember { mutableStateOf<PeripheralConnectorType?>(null) }
     var peripheralConnectorApiUrl by remember { mutableStateOf<String?>(null) }
 
     fun finishSetup() {
+        val newName = name
         val newUwbAddress = uwbAddress
         val newUwbSessionId = uwbSessionId
         val newPeripheralConnectorType = peripheralConnectorType
         val newPeripheralConnectorApiUrl = peripheralConnectorApiUrl
-        if (newUwbAddress != null && newUwbSessionId != null && newPeripheralConnectorType != null && newPeripheralConnectorApiUrl != null) {
+        if (newName != null && newUwbAddress != null && newUwbSessionId != null && newPeripheralConnectorType != null && newPeripheralConnectorApiUrl != null) {
             setupViewModel.createDevice(
+                name = newName,
                 uwbAddress = newUwbAddress,
                 uwbSessionId = newUwbSessionId,
                 peripheralType = newPeripheralConnectorType,
@@ -93,7 +96,8 @@ fun ManualDeviceSetupBottomSheet(
                             onClose()
                         }
                     },
-                    onContinue = { newMacAddress, newSessionId ->
+                    onContinue = { newName, newMacAddress, newSessionId ->
+                        name = newName
                         uwbAddress = newMacAddress
                         uwbSessionId = newSessionId
                         navController.navigate(DeviceTypeRoute)

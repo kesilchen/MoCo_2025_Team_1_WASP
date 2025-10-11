@@ -19,6 +19,7 @@ import androidx.room.PrimaryKey
 class Device(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0L,
+    val name: String,
     val uwbAddress: String,
     val uwbSessionId: Int,
     val peripheralConnectorId: Long

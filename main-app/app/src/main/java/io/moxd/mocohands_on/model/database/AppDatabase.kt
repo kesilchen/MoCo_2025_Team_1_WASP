@@ -11,7 +11,7 @@ import io.moxd.mocohands_on.model.database.entities.PeripheralConnector
 
 @Database(
     entities = [Device::class, PeripheralConnector::class],
-    version = 2
+    version = 3
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun deviceDao(): DeviceDao

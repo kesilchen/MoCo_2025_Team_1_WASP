@@ -16,4 +16,8 @@ interface DeviceDao {
     @Transaction
     @Query("SELECT * FROM devices WHERE id = :id")
     fun getDeviceWithPeripheralConnector(id: Long): Flow<DeviceWithPeripheralConnector?>
+
+    @Transaction
+    @Query("SELECT * FROM devices")
+    fun listDevicesWithPeripheralConnector(): Flow<List<DeviceWithPeripheralConnector>>
 }

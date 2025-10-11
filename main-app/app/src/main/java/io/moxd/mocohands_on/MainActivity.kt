@@ -9,20 +9,25 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navOptions
 import io.moxd.mocohands_on.ui.composables.OurScaffold
 import io.moxd.mocohands_on.ui.screens.SetupDevicesScreen
+import io.moxd.mocohands_on.ui.screens.SplashScreen
 import io.moxd.mocohands_on.ui.screens.UwbConnectScreen
 import io.moxd.mocohands_on.ui.screens.UwbDataScreen
 import io.moxd.mocohands_on.ui.screens.UwbPovScreen
 import io.moxd.mocohands_on.ui.screens.WelcomeScreen
 import io.moxd.mocohands_on.ui.theme.MoCoHandsOnTheme
 import io.moxd.mocohands_on.viewmodel.RangingViewModel
+import io.moxd.mocohands_on.viewmodel.SetupViewModel
 import kotlinx.serialization.Serializable
 
 class MainActivity : ComponentActivity() {
@@ -63,6 +68,10 @@ class MainActivity : ComponentActivity() {
                     )
                 )
 
+                val setupViewModel = viewModel<SetupViewModel>()
+
+                val devices by setupViewModel.devices.collectAsState(listOf())
+
                 OurScaffold(
                     onNavigate = { route -> navController.navigate(route) }
                 ) {
@@ -70,15 +79,26 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         startDestination =
 //                            if (showDebugScreen) UwbConnectRoute else UwbDataRoute
-                            WelcomeRoute
+                            SplashRoute
                     ) {
+                        composable<SplashRoute> {
+                            SplashScreen { route ->
+                                navController.navigate(route)
+                            }
+                        }
                         composable<WelcomeRoute> {
                             WelcomeScreen {
                                 navController.navigate(SetupDevicesRoute)
                             }
                         }
                         composable<SetupDevicesRoute> {
-                            SetupDevicesScreen()
+                            SetupDevicesScreen {
+                                navController.navigate(UwbDataRoute) {
+                                    popUpTo(0) {
+                                        inclusive = true
+                                    }
+                                }
+                            }
                         }
                         composable<UwbConnectRoute> {
                             UwbConnectScreen(
@@ -105,6 +125,9 @@ class MainActivity : ComponentActivity() {
 }
 
 sealed class Route
+
+@Serializable
+data object SplashRoute : Route()
 
 @Serializable
 data object WelcomeRoute : Route()
