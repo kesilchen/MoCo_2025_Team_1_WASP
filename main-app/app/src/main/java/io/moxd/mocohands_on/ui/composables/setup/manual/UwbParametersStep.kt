@@ -23,12 +23,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.uwb.UwbAddress
 import io.moxd.mocohands_on.ui.theme.CornerRadius
 import io.moxd.mocohands_on.util.isValidMac
 import io.moxd.mocohands_on.util.isValidSessionId
 
 @Composable
-fun UwbParametersStep(onClose: () -> Unit, onContinue: () -> Unit) {
+fun UwbParametersStep(
+    onClose: () -> Unit,
+    onContinue: (uwbAddress: String, sessionId: Int) -> Unit
+) {
     var macAddress by remember { mutableStateOf("") }
     var sessionId by remember { mutableStateOf("") }
 
@@ -71,7 +75,7 @@ fun UwbParametersStep(onClose: () -> Unit, onContinue: () -> Unit) {
         Spacer(Modifier.height(24.dp))
 
         Button(
-            onClick = onContinue,
+            onClick = { onContinue(macAddress, sessionId.toInt()) },
             modifier = Modifier.fillMaxWidth(),
             enabled = isMacValid && isSessionValid,
             shape = RoundedCornerShape(CornerRadius)
@@ -90,5 +94,5 @@ fun UwbParametersStep(onClose: () -> Unit, onContinue: () -> Unit) {
 @Preview(showBackground = true)
 @Composable
 fun UwbParametersStepPreview() {
-    UwbParametersStep(onClose = {}, onContinue = {})
+    UwbParametersStep(onClose = {}, onContinue = { macAddress, sessionId -> })
 }

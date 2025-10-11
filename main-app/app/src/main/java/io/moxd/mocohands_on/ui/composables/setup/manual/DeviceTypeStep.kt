@@ -32,13 +32,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.moxd.mocohands_on.R
+import io.moxd.mocohands_on.model.peripherals.PeripheralConnectorType
 import io.moxd.mocohands_on.ui.theme.CornerRadius
 import io.moxd.mocohands_on.ui.theme.CornerRadiusLarge
-
-enum class DeviceType {
-    Test,
-    Test2
-}
 
 data class DeviceTypeOption(
     val label: String,
@@ -97,8 +93,8 @@ fun DeviceTypeOptionItem(
 }
 
 @Composable
-fun DeviceTypeStep(onBack: () -> Unit, onContinue: () -> Unit) {
-    var selectedDeviceType by remember { mutableStateOf<DeviceType?>(null) }
+fun DeviceTypeStep(onBack: () -> Unit, onContinue: (type: PeripheralConnectorType) -> Unit) {
+    var selectedDeviceType by remember { mutableStateOf<PeripheralConnectorType?>(null) }
 
     Column(
         modifier = Modifier
@@ -116,10 +112,10 @@ fun DeviceTypeStep(onBack: () -> Unit, onContinue: () -> Unit) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             DeviceTypeOptionItem(
                 option = DeviceTypeOption(
-                    label = "ESP32 LED",
+                    label = "UWBeEsp32",
                     icon = R.drawable.sensors_24px
-                ), isSelected = selectedDeviceType == DeviceType.Test
-            ) { selectedDeviceType = DeviceType.Test }
+                ), isSelected = selectedDeviceType == PeripheralConnectorType.UWBeEsp32
+            ) { selectedDeviceType = PeripheralConnectorType.UWBeEsp32 }
         }
 
         Spacer(Modifier.height(24.dp))
@@ -137,7 +133,11 @@ fun DeviceTypeStep(onBack: () -> Unit, onContinue: () -> Unit) {
             }
 
             Button(
-                onClick = onContinue,
+                onClick = {
+                    selectedDeviceType?.let { type ->
+                        onContinue(type)
+                    }
+                },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(CornerRadius),
                 enabled = selectedDeviceType != null

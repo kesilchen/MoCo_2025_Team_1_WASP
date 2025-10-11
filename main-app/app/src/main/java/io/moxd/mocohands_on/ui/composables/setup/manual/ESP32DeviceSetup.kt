@@ -42,7 +42,7 @@ import kotlinx.coroutines.launch
 fun ESP32DeviceSetup(
     setupViewModel: SetupViewModel = viewModel<SetupViewModel>(),
     onBack: () -> Unit,
-    onContinue: () -> Unit
+    onContinue: (ipAddress: String) -> Unit
 ) {
     var ipAddress by remember { mutableStateOf("") }
     var isConnecting by remember { mutableStateOf(false) }
@@ -163,7 +163,7 @@ fun ESP32DeviceSetup(
             }
 
             Button(
-                onClick = onContinue,
+                onClick = { onContinue(ipAddress) },
                 enabled = isContinueEnabled,
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(CornerRadius)

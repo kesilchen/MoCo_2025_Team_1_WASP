@@ -1,8 +1,20 @@
 package io.moxd.mocohands_on.viewmodel
 
+import android.app.Application
+import androidx.core.uwb.UwbAddress
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import io.moxd.mocohands_on.model.database.AppDatabase
+import io.moxd.mocohands_on.model.database.entities.Device
+import io.moxd.mocohands_on.model.database.entities.PeripheralConnector
+import io.moxd.mocohands_on.model.database.stores.DeviceStore
+import io.moxd.mocohands_on.model.database.stores.PeripheralConnectorStore
+import io.moxd.mocohands_on.model.peripherals.PeripheralConnectorType
 import io.moxd.mocohands_on.model.peripherals.uwbeesp32.DeviceInfo
 import io.moxd.mocohands_on.model.peripherals.uwbeesp32.UWBeEsp32Service
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.net.ConnectException
 
 sealed class TestResult {
@@ -10,8 +22,36 @@ sealed class TestResult {
     data class Error(val message: String) : TestResult()
 }
 
-class SetupViewModel() :
-    ViewModel() {
+class SetupViewModel(app: Application) :
+    AndroidViewModel(app) {
+
+    private val db = AppDatabase.getInstance(app.applicationContext)
+    private val deviceStore = DeviceStore(db.deviceDao())
+    private val peripheralConnectorStore = PeripheralConnectorStore(db.peripheralConnectorDao())
+
+    fun createDevice(uwbAddress: String, uwbSessionId: Int, peripheralType: PeripheralConnectorType, peripheralApiUrl: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val peripheralConnectorId = peripheralConnectorStore.insertPeripheralConnector(PeripheralConnector(
+                type = peripheralType,
+                apiUrl = peripheralApiUrl
+            ))
+
+            deviceStore.insertDevice(Device(
+                uwbAddress = uwbAddress,
+                uwbSessionId = uwbSessionId,
+                peripheralConnectorId = peripheralConnectorId
+            ))
+        }
+    }
+
+//    fun createPeripheralConnector(type: PeripheralConnectorType, apiUrl: String) {
+//        viewModelScope.launch(Dispatchers.IO) {
+//            peripheralConnectorStore.insertPeripheralConnector(PeripheralConnector(
+//                type = type,
+//                apiUrl = apiUrl
+//            ))
+//        }
+//    }
 
     suspend fun testEsp32Connection(ipAddress: String): TestResult {
         val apiService = UWBeEsp32Service.createApiService(ipAddress)
