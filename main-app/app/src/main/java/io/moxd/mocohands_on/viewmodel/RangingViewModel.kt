@@ -11,6 +11,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.moxd.mocohands_on.model.modifier.NoNullsModifier
 import io.moxd.mocohands_on.BuildConfig
+import io.moxd.mocohands_on.model.modifier.MovingAverageModifier
+import io.moxd.mocohands_on.model.modifier.OutlierRejectionModifier
 import io.moxd.mocohands_on.model.modifier.RangingModifier
 import io.moxd.mocohands_on.model.ranging.DefaultRangingProvider
 import io.moxd.mocohands_on.model.ranging.oob.FakeOutOfBandProvider
@@ -39,7 +41,9 @@ class RangingViewModel(app: Application, useFakeData: Boolean, showDebugScreen: 
     private val dateFormat = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
 
     val modifiers = listOf<RangingModifier>(
+        OutlierRejectionModifier(),
         NoNullsModifier(),
+        MovingAverageModifier()
     )
 
     val readings = modifiers.fold(rangingProvider.readings) { acc, modifier ->
