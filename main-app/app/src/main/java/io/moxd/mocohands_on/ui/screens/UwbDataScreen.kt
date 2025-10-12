@@ -83,7 +83,6 @@ fun UwbDataScreen(
                 skipNextEmission = false
                 return@collect
             }
-
             readingsByDevice = readingsByDevice.toMutableMap().apply {
                 this[reading.address.toString()] = reading
             }
@@ -99,10 +98,6 @@ fun UwbDataScreen(
     ) {
         Text("Status: ${state.javaClass.simpleName}")
 
-//        Text("Distance: ${readings?.distanceMeters?.let { "%.2f m".format(it) } ?: "-"}")
-//        Text("Azimuth:  ${readings?.azimuthDegrees?.let { "%.1f°".format(it) } ?: "-"}")
-//        Text("Elevation:${readings?.elevationDegrees?.let { "%.1f°".format(it) } ?: "-"}")
-
         Spacer(Modifier.height(4.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -113,45 +108,49 @@ fun UwbDataScreen(
                 },
                 enabled = state is RangingStateDto.Running
             ) { Text("Stop & Back") }
-
-//            if (state !is RangingStateDto.Running) {
-//                Button(onClick = {
-//                    vm.onPrepare(controller = true)
-//                }) {
-//                    Text("Re-Prepare")
-//                }
-//            }
         }
-
-//        val err = ui.errorMessage
-//        if (!err.isNullOrBlank()) {
-//            Spacer(Modifier.height(4.dp))
-//            Text(err, color = MaterialTheme.colorScheme.error)
-//        }
 
         Spacer(Modifier.height(4.dp))
 
-        RangeCompass(
-            targets = readingsByDevice.map {
-                BoardTarget(
-                    address = it.value.address,
-                    angleDegrees = it.value.azimuthDegrees,
-                    elevationDegrees = it.value.elevationDegrees,
-                    distanceMeters = it.value.distanceMeters,
-                    color = getColorFromAddress(it.value.address)
+        val targets = readingsByDevice.values.map { rr ->
+            BoardTarget(
+                address = rr.address,
+                angleDegrees = rr.azimuthDegrees,
+                elevationDegrees = rr.elevationDegrees,
+                distanceMeters = rr.distanceMeters,
+                color = getColorFromAddress(rr.address)
+            )
+        }
+
+        val aimToleranceDeg = 10.0
+
+        val activeIndex = targets
+            .withIndex()
+            .filter { it.value.angleDegrees != null }
+            .filter { abs(it.value.angleDegrees!!) <= aimToleranceDeg }
+            .minWithOrNull(
+                compareBy(
+                    { abs(it.value.elevationDegrees ?: Double.POSITIVE_INFINITY) },
+                    { abs(it.value.angleDegrees!!) }
                 )
-            },
+            )
+            ?.index
+
+        RangeCompass(
+            targets = targets,
             maxRangeMeters = 3.0,
-            activeIndex = 0
+            activeIndex = activeIndex
         )
 
         Spacer(Modifier.height(4.dp))
 
-        val aimToleranceDeg = 10.0
-        val isAimingAtBoard = readings?.azimuthDegrees?.let { abs(it) <= aimToleranceDeg } == true
+        val isAimingAtBoard = activeIndex != null
 
         Button(
-            onClick = { /* TODO: trigger interaction */ },
+            onClick = {
+                // TODO: interact with the chosen board
+                // val chosen = activeIndex?.let { targets[it] }
+            },
             enabled = isAimingAtBoard,
             modifier = Modifier.fillMaxWidth()
         ) {
