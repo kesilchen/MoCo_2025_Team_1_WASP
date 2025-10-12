@@ -1,7 +1,6 @@
 package io.moxd.mocohands_on.ui.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,27 +21,73 @@ import io.moxd.mocohands_on.viewmodel.RangingViewModel
 import java.security.MessageDigest
 import kotlin.math.abs
 
+private val DarkModePalette = listOf(
+    Color(0xFFFFB300),
+    Color(0xFFFF7043),
+    Color(0xFFF06292),
+    Color(0xFFBA68C8),
+    Color(0xFF9575CD),
+    Color(0xFF4FC3F7),
+    Color(0xFF4DB6AC),
+    Color(0xFF81C784),
+    Color(0xFFFFF176),
+    Color(0xFFFFD54F),
+    Color(0xFFAED581),
+    Color(0xFF64B5F6)
+)
+
 @OptIn(ExperimentalStdlibApi::class)
 fun getColorFromAddress(address: UwbAddress): Color {
-    val md = MessageDigest.getInstance("SHA-256")
-    val digest = md.digest(address.address)
-    val hex = digest.slice(0..5).toByteArray().toHexString()
-    return Color("FF$hex".toLong(16))
+    val digest = MessageDigest
+        .getInstance("SHA-256")
+        .digest(address.address)
+
+    val hash = digest.take(4).fold(0) { accumulator, byte ->
+        (accumulator shl 8) or (byte.toInt() and 0xFF)
+    }
+
+    val paletteIndex = (hash and Int.MAX_VALUE) % DarkModePalette.size
+    return DarkModePalette[paletteIndex]
 }
 
 @Composable
-fun UwbDataScreen(vm: RangingViewModel, onSettingsClick: () -> Unit) {
+fun UwbDataScreen(
+    vm: RangingViewModel,
+    onBack: () -> Unit
+) {
     val readings by vm.readings.collectAsState(null)
     var readingsByDevice by remember { mutableStateOf(emptyMap<String, RangingReadingDto>()) }
+    var lastState by remember { mutableStateOf<RangingStateDto?>(null) }
+    var skipNextEmission by remember { mutableStateOf(false) }
+    val state by vm.state.collectAsState()
 
-    var showLocalUwbAddressesDialog by remember { mutableStateOf(false) }
+    fun resetTargets(skipReplay: Boolean) {
+        readingsByDevice = emptyMap()
+        skipNextEmission = skipReplay
+    }
 
     LaunchedEffect(Unit) {
-        vm.start()
-        if (!BuildConfig.USE_FAKE_DATA) {
-            showLocalUwbAddressesDialog = true
+        resetTargets(vm.readings.replayCache.isNotEmpty())
+    }
+
+    LaunchedEffect(state) {
+        if (state is RangingStateDto.Running && lastState !is RangingStateDto.Running) {
+            resetTargets(vm.readings.replayCache.isNotEmpty())
         }
+
+        if (state !is RangingStateDto.Running) {
+            resetTargets(false)
+        }
+
+        lastState = state
+    }
+
+    LaunchedEffect(vm.readings) {
         vm.readings.collect { reading ->
+            if (skipNextEmission) {
+                skipNextEmission = false
+                return@collect
+            }
             readingsByDevice = readingsByDevice.toMutableMap().apply {
                 this[reading.address.toString()] = reading
             }
@@ -77,31 +122,64 @@ fun UwbDataScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalAlignment = Alignment.Start
     ) {
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            IconButton(onClick = onSettingsClick) {
-                Icon(painter = painterResource(R.drawable.settings_24px), contentDescription = null)
-            }
+        Text("Status: ${state.javaClass.simpleName}")
+
+        Spacer(Modifier.height(4.dp))
+
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Button(
+                onClick = {
+                    vm.restart()
+                    onBack()
+                },
+                enabled = state is RangingStateDto.Running
+            ) { Text("Stop & Back") }
         }
 
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
-            RangeCompass(
-                targets = readingsByDevice.map {
-                    BoardTarget(
-                        address = it.value.address,
-                        angleDegrees = it.value.azimuthDegrees,
-                        elevationDegrees = it.value.elevationDegrees,
-                        distanceMeters = it.value.distanceMeters,
-                        color = getColorFromAddress(it.value.address)
-                    )
-                },
-                maxRangeMeters = 3.0,
-                activeIndex = 0
+        Spacer(Modifier.height(4.dp))
+
+        val targets = readingsByDevice.values.map { rr ->
+            BoardTarget(
+                address = rr.address,
+                angleDegrees = rr.azimuthDegrees,
+                elevationDegrees = rr.elevationDegrees,
+                distanceMeters = rr.distanceMeters,
+                color = getColorFromAddress(rr.address)
             )
         }
 
+        val aimToleranceDeg = 10.0
+
+        val activeIndex = targets
+            .withIndex()
+            .filter { it.value.angleDegrees != null }
+            .filter { abs(it.value.angleDegrees!!) <= aimToleranceDeg }
+            .minWithOrNull(
+                compareBy(
+                    { abs(it.value.elevationDegrees ?: Double.POSITIVE_INFINITY) },
+                    { abs(it.value.angleDegrees!!) }
+                )
+            )
+            ?.index
+
+        RangeCompass(
+            targets = targets,
+            maxRangeMeters = 3.0,
+            activeIndex = activeIndex
+        )
+
+        Spacer(Modifier.height(4.dp))
+
+        val isAimingAtBoard = activeIndex != null
+
         Button(
-            onClick = { /* TODO: trigger interaction */ },
+            onClick = {
+                // TODO: interact with the chosen board
+                // val chosen = activeIndex?.let { targets[it] }
+            },
             enabled = isAimingAtBoard,
             modifier = Modifier.fillMaxWidth()
         ) {
