@@ -14,6 +14,7 @@ const int ledPin = 33;
 
 Preferences prefs;
 WebServer server(80);
+bool ledState = false;
 
 String uuidToString(const uint8_t* uuidBytes) {
   const char* hex = "0123456789abcdef";
@@ -43,20 +44,35 @@ void handleInfoGet() {
 void handleLedPost() {
   if (server.hasArg("plain")) {
     String body = server.arg("plain");
-    body.trim();
+
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, body);
+
+    if (error) {
+      server.send(400, "text/plain", "Invalid JSON");
+    }
+
+    bool state = doc["state"];
+    Serial.println(state);
     
-    if (body == "on") {
+    if (state) {
       digitalWrite(ledPin, HIGH);
+      ledState = true;
       server.send(200, "text/plain", "LED turned ON");
-    } else if (body == "off") {
-      digitalWrite(ledPin, LOW);
-      server.send(200, "text/plain", "LED turned OFF");
     } else {
-      server.send(400, "text/plain", "Invalid value, send 'on' or 'off'");
+      digitalWrite(ledPin, LOW);
+      ledState = false;
+      server.send(200, "text/plain", "LED turned OFF");
     }
   } else {
     server.send(400, "text/plain", "No POST body received");
   }
+}
+
+void handleLedTogglePost() {
+  digitalWrite(ledPin, ledState ? LOW : HIGH);
+  ledState = !ledState;
+  server.send(200, "text/plain", "Success");
 }
 
 void getDeviceId(uint8_t* device_uuid_bytes) {
@@ -96,6 +112,7 @@ void setup() {
   Serial.println(WiFi.localIP());
 
   server.on("/led", HTTP_POST, handleLedPost);
+  server.on("/led/toggle", HTTP_POST, handleLedTogglePost);
   server.on("/info", HTTP_GET, handleInfoGet);
 
   server.begin();
