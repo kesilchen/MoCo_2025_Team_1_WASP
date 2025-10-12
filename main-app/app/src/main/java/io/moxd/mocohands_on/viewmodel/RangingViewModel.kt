@@ -11,6 +11,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import io.moxd.mocohands_on.model.modifier.NoNullsModifier
 import io.moxd.mocohands_on.BuildConfig
+import io.moxd.mocohands_on.model.database.AppDatabase
+import io.moxd.mocohands_on.model.database.stores.DeviceStore
 import io.moxd.mocohands_on.model.modifier.MovingAverageModifier
 import io.moxd.mocohands_on.model.modifier.OutlierRejectionModifier
 import io.moxd.mocohands_on.model.modifier.RangingModifier
@@ -29,9 +31,12 @@ import java.util.Locale
 
 class RangingViewModel(app: Application, useFakeData: Boolean, showDebugScreen: Boolean) :
     AndroidViewModel(app) {
-    private val manualOutOfBandProvider = ManualOutOfBandProvider()
+    private val db = AppDatabase.getInstance(app.applicationContext)
+    private val deviceStore = DeviceStore(db.deviceDao())
+
+    private val manualOutOfBandProvider = ManualOutOfBandProvider(deviceStore.getDeviceCount())
     private val outOfBandProvider =
-        if (showDebugScreen) manualOutOfBandProvider else FakeOutOfBandProvider()
+        if (useFakeData) FakeOutOfBandProvider() else manualOutOfBandProvider
 
     private val uwbProvider =
         if (useFakeData) FakeUwbProvider(app.applicationContext) else UnicastUwbProvider(app.applicationContext)
@@ -60,8 +65,6 @@ class RangingViewModel(app: Application, useFakeData: Boolean, showDebugScreen: 
 
     init {
         Log.d("RangingViewModel", "init")
-        start()
-
         viewModelScope.launch(Dispatchers.IO) {
             readings.collect { r ->
                 Log.d(
@@ -82,7 +85,7 @@ class RangingViewModel(app: Application, useFakeData: Boolean, showDebugScreen: 
     }
 
     fun setNumberOfDevices(n: Int) {
-        manualOutOfBandProvider.setNumberOfDevices(n)
+//        manualOutOfBandProvider.setNumberOfDevices(n)
         _remoteAddresses = SnapshotStateList(n) { "00:00" }
         restart()
     }

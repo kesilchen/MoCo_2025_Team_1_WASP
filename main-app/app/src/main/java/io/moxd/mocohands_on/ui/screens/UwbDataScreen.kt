@@ -11,10 +11,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.uwb.UwbAddress
+import io.moxd.mocohands_on.BuildConfig
 import io.moxd.mocohands_on.R
 import io.moxd.mocohands_on.model.data.RangingReadingDto
 import io.moxd.mocohands_on.model.data.RangingStateDto
 import io.moxd.mocohands_on.ui.composables.BoardTarget
+import io.moxd.mocohands_on.ui.composables.LocalUwbAddressesDialog
 import io.moxd.mocohands_on.ui.composables.RangeCompass
 import io.moxd.mocohands_on.viewmodel.RangingViewModel
 import java.security.MessageDigest
@@ -33,7 +35,13 @@ fun UwbDataScreen(vm: RangingViewModel, onSettingsClick: () -> Unit) {
     val readings by vm.readings.collectAsState(null)
     var readingsByDevice by remember { mutableStateOf(emptyMap<String, RangingReadingDto>()) }
 
-    LaunchedEffect(vm.readings) {
+    var showLocalUwbAddressesDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        vm.start()
+        if (!BuildConfig.USE_FAKE_DATA) {
+            showLocalUwbAddressesDialog = true
+        }
         vm.readings.collect { reading ->
             readingsByDevice = readingsByDevice.toMutableMap().apply {
                 this[reading.address.toString()] = reading
@@ -41,8 +49,18 @@ fun UwbDataScreen(vm: RangingViewModel, onSettingsClick: () -> Unit) {
         }
     }
     val state by vm.state.collectAsState()
+    val localUwbAddresses by vm.localUwbAddresses.collectAsState()
 
     UwbDataScreen(readings, readingsByDevice, state, onSettingsClick)
+
+    if (showLocalUwbAddressesDialog) {
+        LocalUwbAddressesDialog(localUwbAddresses, onClose = {
+            showLocalUwbAddressesDialog = false
+        }, onConfirm = {
+            showLocalUwbAddressesDialog = false
+            vm.confirm()
+        })
+    }
 }
 
 @Composable

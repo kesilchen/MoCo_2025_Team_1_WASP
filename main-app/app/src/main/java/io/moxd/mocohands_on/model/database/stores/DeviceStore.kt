@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.Flow
 
 class DeviceStore(private val deviceDao: DeviceDao) {
     suspend fun insertDevice(device: Device) = deviceDao.insertDevice(device)
-    fun getDeviceWithPeripheralConnector(id: Long): Flow<DeviceWithPeripheralConnector?> = deviceDao.getDeviceWithPeripheralConnector(id)
-    fun listDevicesWithPeripheralConnector(): Flow<List<DeviceWithPeripheralConnector>> =deviceDao.listDevicesWithPeripheralConnector()
+    fun getDeviceWithPeripheralConnector(id: Long) =
+        deviceDao.getDeviceWithPeripheralConnector(id)
+    fun listDevicesWithPeripheralConnector() = deviceDao.listDevicesWithPeripheralConnector()
+    fun getDeviceCount() = deviceDao.getDeviceCount()
 }

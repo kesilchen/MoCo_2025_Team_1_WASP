@@ -20,4 +20,7 @@ interface DeviceDao {
     @Transaction
     @Query("SELECT * FROM devices")
     fun listDevicesWithPeripheralConnector(): Flow<List<DeviceWithPeripheralConnector>>
+
+    @Query("SELECT COUNT(*) FROM devices")
+    fun getDeviceCount(): Flow<Int>
 }
