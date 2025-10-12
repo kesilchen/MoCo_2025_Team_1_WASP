@@ -16,12 +16,33 @@ import io.moxd.mocohands_on.viewmodel.RangingViewModel
 import java.security.MessageDigest
 import kotlin.math.abs
 
+private val DarkModePalette = listOf(
+    Color(0xFFFFB300),
+    Color(0xFFFF7043),
+    Color(0xFFF06292),
+    Color(0xFFBA68C8),
+    Color(0xFF9575CD),
+    Color(0xFF4FC3F7),
+    Color(0xFF4DB6AC),
+    Color(0xFF81C784),
+    Color(0xFFFFF176),
+    Color(0xFFFFD54F),
+    Color(0xFFAED581),
+    Color(0xFF64B5F6)
+)
+
 @OptIn(ExperimentalStdlibApi::class)
 fun getColorFromAddress(address: UwbAddress): Color {
-    val md = MessageDigest.getInstance("SHA-256")
-    val digest = md.digest(address.address)
-    val hex = digest.slice(0..5).toByteArray().toHexString()
-    return Color("FF$hex".toLong(16))
+    val digest = MessageDigest
+        .getInstance("SHA-256")
+        .digest(address.address)
+
+    val hash = digest.take(4).fold(0) { accumulator, byte ->
+        (accumulator shl 8) or (byte.toInt() and 0xFF)
+    }
+
+    val paletteIndex = (hash and Int.MAX_VALUE) % DarkModePalette.size
+    return DarkModePalette[paletteIndex]
 }
 
 @Composable
@@ -31,10 +52,38 @@ fun UwbDataScreen(
 ) {
     val readings by vm.readings.collectAsState(null)
     var readingsByDevice by remember { mutableStateOf(emptyMap<String, RangingReadingDto>()) }
+    var lastState by remember { mutableStateOf<RangingStateDto?>(null) }
+    var skipNextEmission by remember { mutableStateOf(false) }
     val state by vm.state.collectAsState()
 
+    fun resetTargets(skipReplay: Boolean) {
+        readingsByDevice = emptyMap()
+        skipNextEmission = skipReplay
+    }
+
+    LaunchedEffect(Unit) {
+        resetTargets(vm.readings.replayCache.isNotEmpty())
+    }
+
+    LaunchedEffect(state) {
+        if (state is RangingStateDto.Running && lastState !is RangingStateDto.Running) {
+            resetTargets(vm.readings.replayCache.isNotEmpty())
+        }
+
+        if (state !is RangingStateDto.Running) {
+            resetTargets(false)
+        }
+
+        lastState = state
+    }
+
     LaunchedEffect(vm.readings) {
-        vm.readings.collect {reading ->
+        vm.readings.collect { reading ->
+            if (skipNextEmission) {
+                skipNextEmission = false
+                return@collect
+            }
+
             readingsByDevice = readingsByDevice.toMutableMap().apply {
                 this[reading.address.toString()] = reading
             }
