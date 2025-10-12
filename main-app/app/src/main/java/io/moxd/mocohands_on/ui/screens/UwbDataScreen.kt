@@ -11,14 +11,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.uwb.UwbAddress
+import androidx.lifecycle.viewmodel.compose.viewModel
 import io.moxd.mocohands_on.BuildConfig
 import io.moxd.mocohands_on.R
 import io.moxd.mocohands_on.model.data.RangingReadingDto
 import io.moxd.mocohands_on.model.data.RangingStateDto
+import io.moxd.mocohands_on.model.database.entities.DeviceWithPeripheralConnector
 import io.moxd.mocohands_on.ui.composables.BoardTarget
 import io.moxd.mocohands_on.ui.composables.LocalUwbAddressesDialog
 import io.moxd.mocohands_on.ui.composables.RangeCompass
 import io.moxd.mocohands_on.viewmodel.RangingViewModel
+import io.moxd.mocohands_on.viewmodel.SetupViewModel
 import java.security.MessageDigest
 import kotlin.math.abs
 
@@ -54,6 +57,7 @@ fun getColorFromAddress(address: UwbAddress): Color {
 @Composable
 fun UwbDataScreen(
     vm: RangingViewModel,
+    setupViewModel: SetupViewModel = viewModel(),
     onSettingsClick: () -> Unit
 ) {
     var readingsByDevice by remember { mutableStateOf(emptyMap<String, RangingReadingDto>()) }
@@ -104,10 +108,14 @@ fun UwbDataScreen(
     }
     val localUwbAddresses by vm.localUwbAddresses.collectAsState()
 
-    UwbDataScreen(readingsByDevice, onSettingsClick)
+    val devices by setupViewModel.devices.collectAsState(listOf())
+
+    UwbDataScreen(readingsByDevice, devices, onSettingsClick, onInteract = { address ->
+        setupViewModel.setEsp32LedStatus(address, true)
+    })
 
     if (showLocalUwbAddressesDialog) {
-        LocalUwbAddressesDialog(localUwbAddresses, onClose = {
+        LocalUwbAddressesDialog(localUwbAddresses, devices, onClose = {
             showLocalUwbAddressesDialog = false
         }, onConfirm = {
             showLocalUwbAddressesDialog = false
@@ -119,7 +127,9 @@ fun UwbDataScreen(
 @Composable
 fun UwbDataScreen(
     readingsByDevice: Map<String, RangingReadingDto>,
-    onSettingsClick: () -> Unit
+    devices: List<DeviceWithPeripheralConnector>,
+    onSettingsClick: () -> Unit,
+    onInteract: (address: UwbAddress) -> Unit
 ) {
     val targets = readingsByDevice.values.map { rr ->
         BoardTarget(
@@ -146,6 +156,7 @@ fun UwbDataScreen(
         ?.index
 
     val isAimingAtBoard = activeIndex != null
+    val chosen = activeIndex?.let { targets[it] }
 
     Column(
         modifier = Modifier
@@ -173,13 +184,14 @@ fun UwbDataScreen(
         }
         Button(
             onClick = {
-                // TODO: interact with the chosen board
-                // val chosen = activeIndex?.let { targets[it] }
+                if (chosen != null) {
+                    onInteract(chosen.address)
+                }
             },
             enabled = isAimingAtBoard,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(if (isAimingAtBoard) "Interact with board" else "Aim at board to interact")
+            Text(if (isAimingAtBoard) "Interact with ${devices.find {it.device.uwbAddress == chosen?.address.toString()}?.device?.name}" else "Aim at board to interact")
         }
     }
 
@@ -198,6 +210,8 @@ fun UwbDataScreenPreview() {
 
     UwbDataScreen(
         readingsByDevice = mapOf(Pair(reading.address.address.toString(), reading)),
-        onSettingsClick = {}
+        devices = listOf(),
+        onSettingsClick = {},
+        onInteract = {}
     )
 }

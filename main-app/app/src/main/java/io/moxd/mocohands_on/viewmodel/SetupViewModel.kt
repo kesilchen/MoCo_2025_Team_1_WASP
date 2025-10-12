@@ -14,6 +14,7 @@ import io.moxd.mocohands_on.model.database.stores.DeviceStore
 import io.moxd.mocohands_on.model.database.stores.PeripheralConnectorStore
 import io.moxd.mocohands_on.model.peripherals.PeripheralConnectorType
 import io.moxd.mocohands_on.model.peripherals.uwbeesp32.DeviceInfo
+import io.moxd.mocohands_on.model.peripherals.uwbeesp32.LedState
 import io.moxd.mocohands_on.model.peripherals.uwbeesp32.UWBeEsp32Service
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -72,13 +73,30 @@ class SetupViewModel(app: Application) :
 //    }
 
     suspend fun testEsp32Connection(ipAddress: String): TestResult {
-        val apiService = UWBeEsp32Service.createApiService(ipAddress)
+        val apiService = UWBeEsp32Service.createApiService("http://$ipAddress/")
 
         try {
             val deviceInfo = apiService.getDeviceInfo()
             return TestResult.Success(deviceInfo)
         } catch (e: ConnectException) {
             return TestResult.Error(e.message ?: "Unable to connect to the device.")
+        }
+    }
+
+    fun setEsp32LedStatus(address: UwbAddress, state: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val device = deviceStore.getDeviceWithPeripheralConnectorByAddress(address)
+
+            if (device != null) {
+                val apiService =
+                    UWBeEsp32Service.createApiService(device.peripheralConnector.apiUrl)
+
+                try {
+                    apiService.toggleLed()
+                } catch (e: ConnectException) {
+
+                }
+            }
         }
     }
 }

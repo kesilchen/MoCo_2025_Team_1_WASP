@@ -25,6 +25,7 @@ import io.moxd.mocohands_on.model.ranging.uwb.provider.UnicastUwbProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.Date
 import java.util.Locale
@@ -59,9 +60,14 @@ class RangingViewModel(app: Application, useFakeData: Boolean, showDebugScreen: 
         replay = 1
     )
 
-    val devices = rangingProvider.devices
+    private val devices = deviceStore.listDevicesWithPeripheralConnector().stateIn(
+        viewModelScope,
+        SharingStarted.Eagerly, listOf()
+    )
     val state = rangingProvider.state
     val localUwbAddresses = manualOutOfBandProvider.localUwbAddresses
+
+    val remoteDevices = rangingProvider.devices
 
     init {
         Log.d("RangingViewModel", "init")
@@ -92,10 +98,10 @@ class RangingViewModel(app: Application, useFakeData: Boolean, showDebugScreen: 
 
     fun confirm() {
         manualOutOfBandProvider.userInputCallback?.callback(
-            remoteAddresses.mapIndexed { index, remoteAddress ->
+            devices.value.mapIndexed { index, device ->
                 UwbDeviceConfiguration(
-                    UwbAddress(remoteAddress),
-                    sessionId = 42 + index,
+                    UwbAddress(device.device.uwbAddress),
+                    sessionId = device.device.uwbSessionId,
                     sessionKey = byteArrayOf(0x08, 0x07, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06)
                 )
             }

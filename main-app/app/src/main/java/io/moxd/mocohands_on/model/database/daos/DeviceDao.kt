@@ -18,6 +18,10 @@ interface DeviceDao {
     fun getDeviceWithPeripheralConnector(id: Long): Flow<DeviceWithPeripheralConnector?>
 
     @Transaction
+    @Query("SELECT * FROM devices WHERE uwbAddress = :address")
+    fun getDeviceWithPeripheralConnectorByAddress(address: String): DeviceWithPeripheralConnector?
+
+    @Transaction
     @Query("SELECT * FROM devices")
     fun listDevicesWithPeripheralConnector(): Flow<List<DeviceWithPeripheralConnector>>
 

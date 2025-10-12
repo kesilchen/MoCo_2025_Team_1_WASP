@@ -26,7 +26,7 @@ class ManualOutOfBandProvider(val numberOfDevices: Flow<Int>): OutOfBandProvider
             _localUwbAddresses.value = localUwbAddresses
             userInputCallback = object: ManualOobCallback {
                 override fun callback(uwbDeviceConfigurations: List<UwbDeviceConfiguration>) {
-                    cont.resume(uwbDeviceConfigurations)
+                    cont.resume(localUwbAddresses.zip(uwbDeviceConfigurations))
                     userInputCallback = null
                 }
             }
