@@ -1,6 +1,7 @@
 package io.moxd.mocohands_on.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -53,9 +54,8 @@ fun getColorFromAddress(address: UwbAddress): Color {
 @Composable
 fun UwbDataScreen(
     vm: RangingViewModel,
-    onBack: () -> Unit
+    onSettingsClick: () -> Unit
 ) {
-    val readings by vm.readings.collectAsState(null)
     var readingsByDevice by remember { mutableStateOf(emptyMap<String, RangingReadingDto>()) }
     var lastState by remember { mutableStateOf<RangingStateDto?>(null) }
     var skipNextEmission by remember { mutableStateOf(false) }
@@ -64,6 +64,15 @@ fun UwbDataScreen(
     fun resetTargets(skipReplay: Boolean) {
         readingsByDevice = emptyMap()
         skipNextEmission = skipReplay
+    }
+
+    var showLocalUwbAddressesDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        vm.start()
+        if (!BuildConfig.USE_FAKE_DATA) {
+            showLocalUwbAddressesDialog = true
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -93,10 +102,9 @@ fun UwbDataScreen(
             }
         }
     }
-    val state by vm.state.collectAsState()
     val localUwbAddresses by vm.localUwbAddresses.collectAsState()
 
-    UwbDataScreen(readings, readingsByDevice, state, onSettingsClick)
+    UwbDataScreen(readingsByDevice, onSettingsClick)
 
     if (showLocalUwbAddressesDialog) {
         LocalUwbAddressesDialog(localUwbAddresses, onClose = {
@@ -110,71 +118,59 @@ fun UwbDataScreen(
 
 @Composable
 fun UwbDataScreen(
-    readings: RangingReadingDto?,
     readingsByDevice: Map<String, RangingReadingDto>,
-    state: RangingStateDto,
     onSettingsClick: () -> Unit
 ) {
+    val targets = readingsByDevice.values.map { rr ->
+        BoardTarget(
+            address = rr.address,
+            angleDegrees = rr.azimuthDegrees,
+            elevationDegrees = rr.elevationDegrees,
+            distanceMeters = rr.distanceMeters,
+            color = getColorFromAddress(rr.address)
+        )
+    }
+
     val aimToleranceDeg = 10.0
-    val isAimingAtBoard = readings?.azimuthDegrees?.let { abs(it) <= aimToleranceDeg } == true
+
+    val activeIndex = targets
+        .withIndex()
+        .filter { it.value.angleDegrees != null }
+        .filter { abs(it.value.angleDegrees!!) <= aimToleranceDeg }
+        .minWithOrNull(
+            compareBy(
+                { abs(it.value.elevationDegrees ?: Double.POSITIVE_INFINITY) },
+                { abs(it.value.angleDegrees!!) }
+            )
+        )
+        ?.index
+
+    val isAimingAtBoard = activeIndex != null
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        horizontalAlignment = Alignment.Start
     ) {
-        Text("Status: ${state.javaClass.simpleName}")
-
-        Spacer(Modifier.height(4.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(
-                onClick = {
-                    vm.restart()
-                    onBack()
-                },
-                enabled = state is RangingStateDto.Running
-            ) { Text("Stop & Back") }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            IconButton(onClick = onSettingsClick) {
+                Icon(painter = painterResource(R.drawable.settings_24px), contentDescription = null)
+            }
         }
-
-        Spacer(Modifier.height(4.dp))
-
-        val targets = readingsByDevice.values.map { rr ->
-            BoardTarget(
-                address = rr.address,
-                angleDegrees = rr.azimuthDegrees,
-                elevationDegrees = rr.elevationDegrees,
-                distanceMeters = rr.distanceMeters,
-                color = getColorFromAddress(rr.address)
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            RangeCompass(
+                targets = targets,
+                maxRangeMeters = 3.0,
+                activeIndex = activeIndex
             )
         }
-
-        val aimToleranceDeg = 10.0
-
-        val activeIndex = targets
-            .withIndex()
-            .filter { it.value.angleDegrees != null }
-            .filter { abs(it.value.angleDegrees!!) <= aimToleranceDeg }
-            .minWithOrNull(
-                compareBy(
-                    { abs(it.value.elevationDegrees ?: Double.POSITIVE_INFINITY) },
-                    { abs(it.value.angleDegrees!!) }
-                )
-            )
-            ?.index
-
-        RangeCompass(
-            targets = targets,
-            maxRangeMeters = 3.0,
-            activeIndex = activeIndex
-        )
-
-        Spacer(Modifier.height(4.dp))
-
-        val isAimingAtBoard = activeIndex != null
-
         Button(
             onClick = {
                 // TODO: interact with the chosen board
@@ -186,6 +182,7 @@ fun UwbDataScreen(
             Text(if (isAimingAtBoard) "Interact with board" else "Aim at board to interact")
         }
     }
+
 }
 
 @Preview(showBackground = true)
@@ -200,9 +197,7 @@ fun UwbDataScreenPreview() {
     )
 
     UwbDataScreen(
-        readings = reading,
         readingsByDevice = mapOf(Pair(reading.address.address.toString(), reading)),
-        state = RangingStateDto.Running,
         onSettingsClick = {}
     )
 }
