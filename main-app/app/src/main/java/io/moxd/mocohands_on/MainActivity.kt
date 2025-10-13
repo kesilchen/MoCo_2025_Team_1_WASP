@@ -79,7 +79,8 @@ class MainActivity : ComponentActivity() {
                         navController = navController,
                         startDestination =
 //                            if (showDebugScreen) UwbConnectRoute else UwbDataRoute
-                            SplashRoute
+                            if (BuildConfig.USE_FAKE_DATA) UwbDataRoute
+                            else SplashRoute
                     ) {
                         composable<SplashRoute> {
                             SplashScreen { route ->
