@@ -95,7 +95,7 @@ fun distance(x1: Float, y1: Float, x2: Float, y2: Float): Float {
 }
 
 @Composable
-fun RangingPovView(targets: List<BoardTarget>, readings: SharedFlow<RangingReadingDto>) {
+fun RangingPovView(targets: List<BoardTarget>, readings: SharedFlow<RangingReadingDto>, onInteract: (target: BoardTarget?) -> Unit) {
     val screenWidth = LocalWindowInfo.current.containerSize.width.toFloat()
     var canvasHeight by remember { mutableFloatStateOf(1000f) }
 
@@ -124,6 +124,24 @@ fun RangingPovView(targets: List<BoardTarget>, readings: SharedFlow<RangingReadi
             }
         }
     }
+
+
+    val aimToleranceDeg = 10.0
+
+    val activeIndex = targets
+        .withIndex()
+        .filter { it.value.angleDegrees != null }
+        .filter { abs(it.value.angleDegrees!!) <= aimToleranceDeg }
+        .minWithOrNull(
+            compareBy(
+                { abs(it.value.elevationDegrees ?: Double.POSITIVE_INFINITY) },
+                { abs(it.value.angleDegrees!!) }
+            )
+        )
+        ?.index
+
+    val isAimingAtBoard = activeIndex != null
+    val chosen = activeIndex?.let { targets[it] }
 
     Box {
 
@@ -188,12 +206,12 @@ fun RangingPovView(targets: List<BoardTarget>, readings: SharedFlow<RangingReadi
                 strokeWidth = 4f
             )
         }
-        if (objectInFocus) {
+        if (isAimingAtBoard) {
             Button(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(bottom = 15.dp),
-                onClick = {}
+                onClick = {onInteract(chosen)}
             ) {
                 Text("Interact")
             }
