@@ -120,7 +120,7 @@ fun UwbPovScreen(vm: RangingViewModel, setupViewModel: SetupViewModel = viewMode
                 distanceMeters = it.value.distanceMeters,
                 color = getColorFromAddress(it.value.address)
             )
-        }, readings = vm.readings, onInteract = { target ->
+        }, readings = vm.readings, devices = devices, onInteract = { target ->
             if (target != null) {
                 setupViewModel.setEsp32LedStatus(target.address, true)
             }

@@ -25,6 +25,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import io.moxd.mocohands_on.model.data.RangingReadingDto
+import io.moxd.mocohands_on.model.database.entities.DeviceWithPeripheralConnector
 import io.moxd.mocohands_on.ui.screens.getColorFromAddress
 import kotlinx.coroutines.flow.SharedFlow
 import kotlin.math.abs
@@ -95,7 +96,12 @@ fun distance(x1: Float, y1: Float, x2: Float, y2: Float): Float {
 }
 
 @Composable
-fun RangingPovView(targets: List<BoardTarget>, readings: SharedFlow<RangingReadingDto>, onInteract: (target: BoardTarget?) -> Unit) {
+fun RangingPovView(
+    targets: List<BoardTarget>,
+    readings: SharedFlow<RangingReadingDto>,
+    devices:  List<DeviceWithPeripheralConnector>,
+    onInteract: (target: BoardTarget?) -> Unit
+) {
     val screenWidth = LocalWindowInfo.current.containerSize.width.toFloat()
     var canvasHeight by remember { mutableFloatStateOf(1000f) }
 
@@ -175,10 +181,10 @@ fun RangingPovView(targets: List<BoardTarget>, readings: SharedFlow<RangingReadi
                 if (it.angleDegrees != null && it.distanceMeters != null && it.elevationDegrees != null) {
                     val box = projectObjectToScreen(
                         angleHDeg = it.angleDegrees - 5,
-                        angleVDeg = it.elevationDegrees + 12,
+                        angleVDeg = it.elevationDegrees + 8,
                         dist = it.distanceMeters,
                         hfovDeg = 30.0,
-                        vfovDeg = 50.0,
+                        vfovDeg = 45.0,
                         screenW = screenWidth,
                         screenH = canvasHeight
                     )
@@ -206,15 +212,14 @@ fun RangingPovView(targets: List<BoardTarget>, readings: SharedFlow<RangingReadi
                 strokeWidth = 4f
             )
         }
-        if (isAimingAtBoard) {
-            Button(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 15.dp),
-                onClick = {onInteract(chosen)}
-            ) {
-                Text("Interact")
-            }
+        Button(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 15.dp),
+            onClick = { onInteract(chosen) },
+            enabled = isAimingAtBoard
+        ) {
+            Text(if (isAimingAtBoard) "Interact with ${devices.find { it.device.uwbAddress == chosen?.address.toString() }?.device?.name ?: "board"}" else "Aim at board to interact")
         }
     }
 }

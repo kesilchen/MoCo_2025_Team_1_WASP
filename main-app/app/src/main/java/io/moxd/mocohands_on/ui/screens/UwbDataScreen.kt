@@ -191,7 +191,7 @@ fun UwbDataScreen(
             enabled = isAimingAtBoard,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(if (isAimingAtBoard) "Interact with ${devices.find {it.device.uwbAddress == chosen?.address.toString()}?.device?.name}" else "Aim at board to interact")
+            Text(if (isAimingAtBoard) "Interact with ${devices.find { it.device.uwbAddress == chosen?.address.toString() }?.device?.name ?: "board"}" else "Aim at board to interact")
         }
     }
 
