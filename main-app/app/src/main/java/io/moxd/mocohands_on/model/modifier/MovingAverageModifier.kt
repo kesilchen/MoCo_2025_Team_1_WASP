@@ -3,9 +3,6 @@ package io.moxd.mocohands_on.model.modifier
 import io.moxd.mocohands_on.model.data.RangingReadingDto
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
 
 class MovingAverageModifier(
     private val windowSize: Int = 20
@@ -35,16 +32,5 @@ class MovingAverageModifier(
                 emit(reading.copy(azimuthDegrees = smoothedAzimuth, elevationDegrees = smoothedElevation))
             }
         }
-    }
-
-    private fun circularMeanDegrees(values: Collection<Double>): Double {
-        var x = 0.0
-        var y = 0.0
-        for (degrees in values) {
-            val radians = Math.toRadians(degrees)
-            x += cos(radians)
-            y += sin(radians)
-        }
-        return Math.toDegrees(atan2(y, x))
     }
 }

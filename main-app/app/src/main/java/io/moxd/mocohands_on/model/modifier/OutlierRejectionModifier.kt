@@ -27,8 +27,13 @@ class OutlierRejectionModifier(
             var elevation = reading.elevationDegrees
 
             if (azimuth != null) {
-                val mean = if (state.azimuthHistory.isEmpty()) azimuth else state.azimuthHistory.average()
-                if (abs(azimuth - mean) > azimuthMaxDeviation) {
+                val mean = if (state.azimuthHistory.isEmpty()) {
+                    azimuth
+                } else {
+                    circularMeanDegrees(state.azimuthHistory)
+                }
+                val deviation = abs(minimalAngularDifferenceDegrees(azimuth, mean))
+                if (deviation > azimuthMaxDeviation) {
                     azimuth = null
                 } else {
                     state.azimuthHistory.addLast(azimuth)
@@ -37,8 +42,13 @@ class OutlierRejectionModifier(
             }
 
             if (elevation != null) {
-                val mean = if (state.elevationHistory.isEmpty()) elevation else state.elevationHistory.average()
-                if (abs(elevation - mean) > elevationMaxDeviation) {
+                val mean = if (state.elevationHistory.isEmpty()) {
+                    elevation
+                } else {
+                    circularMeanDegrees(state.elevationHistory)
+                }
+                val deviation = abs(minimalAngularDifferenceDegrees(elevation, mean))
+                if (deviation > elevationMaxDeviation) {
                     elevation = null
                 } else {
                     state.elevationHistory.addLast(elevation)
