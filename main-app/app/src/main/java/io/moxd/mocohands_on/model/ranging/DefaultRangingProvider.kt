@@ -1,7 +1,9 @@
 package io.moxd.mocohands_on.model.ranging
 
+import androidx.core.uwb.UwbAddress
 import io.moxd.mocohands_on.model.data.RangingStateDto
 import io.moxd.mocohands_on.model.ranging.oob.OutOfBandProvider
+import io.moxd.mocohands_on.model.ranging.uwb.UwbDeviceConfiguration
 import io.moxd.mocohands_on.model.ranging.uwb.provider.UwbProvider
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -11,7 +13,7 @@ class DefaultRangingProvider(
     private val uwbProvider: UwbProvider
 ) : RangingProvider {
     override val readings = uwbProvider.readings
-    private val _devices = MutableStateFlow<List<Unit>>(listOf())
+    private val _devices = MutableStateFlow<List<Pair<UwbAddress, UwbDeviceConfiguration>>>(listOf())
     override val devices = _devices.asStateFlow()
     override val state = MutableStateFlow<RangingStateDto>(RangingStateDto.Idle)
 
@@ -19,12 +21,12 @@ class DefaultRangingProvider(
         state.value = RangingStateDto.Preparing
 
         val uwbDevices = oobProvider.discoverDevices()
-        _devices.value = uwbDevices
         val localUwbAddresses = uwbProvider.prepareSession(uwbDevices.size)
         val remoteUwbDevices = oobProvider.exchangeParameters(localUwbAddresses)
+        _devices.value = remoteUwbDevices
         state.value = RangingStateDto.Ready("")
 
-        uwbProvider.startRanging(remoteUwbDevices)
+        uwbProvider.startRanging(remoteUwbDevices.unzip().second)
         state.value = RangingStateDto.Running
     }
 
